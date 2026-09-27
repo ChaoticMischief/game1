@@ -62,6 +62,8 @@ Cloud project. If Unity Hub or the editor offers either, decline.
 `ProjectSettings/VersionControlSettings.asset` stays on `Visible Meta Files`, and
 asset serialization stays on `Force Text`.
 
-CI will be added later.
+## License
 
-Cursor session capture test.
+Code (C#, scripts, tooling, configuration) is under the [MIT License](LICENSE). Game content
+(art, audio, scenes, levels, story, the game's name and branding) is all rights reserved. See
+[CONTENT-LICENSE.md](CONTENT-LICENSE.md) for exactly which files are which.

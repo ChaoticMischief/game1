@@ -60,7 +60,8 @@ case "$DEV_PATH" in /*) DEV_DIR="$DEV_PATH" ;; *) DEV_DIR="$ROOT/$DEV_PATH" ;; e
 if [ -d "$DEV_DIR/.git" ]; then
   echo "already present: $DEV_DIR"
 elif [ -n "$DEV_URL" ]; then
-  git clone "$DEV_URL" "$DEV_DIR"
+  # Private repo: only maintainers can clone it. Everything else works without it.
+  git clone "$DEV_URL" "$DEV_DIR" || echo "could not clone the dev-history repo (it's private); continuing without it"
 else
   echo "no dev_repo_url in .claude/dev-repo-config.json; clone the dev repo to $DEV_DIR yourself" >&2
 fi
