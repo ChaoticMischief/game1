@@ -7,18 +7,20 @@ transcript, metadata.json, redactions.log, and new events appended to
 events.ndjson. Then rebuilds the derived timeline and commits/pushes via the
 dev repo's retry wrapper. Always exits 0 so a sync problem never blocks Claude.
 """
+import fcntl
 import json
 import os
 import re
 import shutil
 import sys
 import tempfile
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import devrepo_common as dc  # noqa: E402
-import fcntl  # noqa: E402
 
 AGENT = "claude-code"
+MEMORY_REDACTION_LOG = "redactions.log"
 TOOL_INPUT_KEYS = ("command", "file_path", "path", "pattern", "url", "query", "description", "prompt")
 TAG_RE = re.compile(r"<(system-reminder|command-[a-z-]+|local-command-[a-z-]+)>.*?</\1>", re.S)
 
@@ -96,6 +98,50 @@ def normalize(lines, start, session_id, ref_prefix):
     return events
 
 
+def sync_memory(transcript_path, dev_repo):
+    """Mirror Claude Code's auto-memory for this project into <dev_repo>/memory/claude-code/.
+
+    The memory dir sits next to the transcript (~/.claude/projects/<project>/memory/).
+    Unlike transcripts it is shared by every session of the project, so the mirror
+    is a snapshot (git history versions it) written under a repo-wide lock; any
+    session mirroring it produces the same result.
+    """
+    src = Path(transcript_path).resolve().parent / "memory"
+    dest = dev_repo / "memory" / AGENT
+    if not src.is_dir() or (not any(src.iterdir()) and not dest.exists()):
+        return
+    lock_path = dev_repo / ".git" / "devlog-memory.lock"
+    with open(lock_path, "w") as lock, tempfile.TemporaryDirectory() as tmp:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        staged_root = Path(tmp) / "memory"
+        shutil.copytree(src, staged_root)
+        staged = sorted(p for p in staged_root.rglob("*") if p.is_file())
+        log_lines = []
+        for path in staged:
+            file_log = Path(tmp) / "file-redactions.log"
+            if dc.redact_file(path, file_log, dev_repo) is None:
+                return
+            rel = path.relative_to(staged_root).as_posix()
+            log_lines += [f"{rel}:{line.split(':', 1)[1]}" for line in file_log.read_text().splitlines()]
+        (staged_root / MEMORY_REDACTION_LOG).write_text("".join(l + "\n" for l in log_lines), encoding="utf-8")
+
+        wanted = {p.relative_to(staged_root) for p in staged} | {Path(MEMORY_REDACTION_LOG)}
+        for rel in wanted:
+            new = (staged_root / rel).read_bytes()
+            target = dest / rel
+            if target.exists() and target.read_bytes() == new:
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            partial = target.parent / f".{target.name}.tmp"
+            partial.write_bytes(new)
+            os.replace(partial, target)
+        if dest.is_dir():
+            for existing in dest.rglob("*"):
+                if existing.is_file() and not existing.name.endswith(".tmp") \
+                        and existing.relative_to(dest) not in wanted:
+                    existing.unlink()  # deleted from memory -> deleted from the mirror
+
+
 def sync(hook, dev_repo):
     session_id = hook["session_id"]
     event_name = hook.get("hook_event_name", "Stop")
@@ -138,6 +184,7 @@ def sync(hook, dev_repo):
     meta.update({"last_synced_time": now, "last_synced_line": len(lines), "game1_head": dc.game1_head()})
     dc.write_json_atomic(meta_path, meta)
 
+    sync_memory(source, dev_repo)
     dc.build_timeline(dev_repo)
     dc.safe_push(dev_repo, f"claude-code: sync {session_id[:8]} ({event_name})")
 
