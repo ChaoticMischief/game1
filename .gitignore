@@ -81,3 +81,6 @@ crashlytics-build.properties
 __pycache__/
 *.pyc
 .claude/settings.local.json
+
+# Unity/Mono native crash dumps
+mono_crash.*.json

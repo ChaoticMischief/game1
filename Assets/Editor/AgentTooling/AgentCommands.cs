@@ -47,9 +47,17 @@ namespace Game.EditorTools
                     options = Environment.GetCommandLineArgs().Contains("-development")
                         ? BuildOptions.Development : BuildOptions.None,
                 };
-                var report = BuildPipeline.BuildPlayer(options);
+                BuildReport report;
+                try
+                {
+                    report = BuildPipeline.BuildPlayer(options);
+                }
+                finally
+                {
+                    BuildVersion.Restore(); // post-build callbacks don't run when a build fails
+                }
                 var s = report.summary;
-                Debug.Log($"[AgentCommands] Build {s.result}: {target} -> {output}, " +
+                Debug.Log($"[AgentCommands] Build {s.result}: {target} {BuildVersion.LastStamped} -> {output}, " +
                           $"{s.totalErrors} errors, {s.totalWarnings} warnings, {s.totalSize} bytes, {s.totalTime}");
                 if (s.result != BuildResult.Succeeded)
                     throw new Exception($"Build {s.result}");

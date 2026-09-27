@@ -44,6 +44,26 @@ Logs and NUnit XML results go to `Logs/agent/`. The live editor's log is
 After changing C# code, verify it: compile (MCP refresh or `unity.sh compile`) and run the
 tests. Don't report work as done while there are compile errors or failing tests.
 
+## Engine choices
+
+Stay on current Unity tech: the project will move to Unity 7 as soon as it's GA, so avoid
+deprecated APIs (fix `CS0618` obsolete warnings rather than suppressing them).
+
+- **Rendering: URP.** Pipeline asset `Assets/Settings/URP.asset` (renderer `URP_Renderer.asset`)
+  is the project default; quality levels inherit it. Use URP/Shader Graph shaders, never Built-in
+  ones.
+- **Input: Input System only** (the legacy Input Manager is disabled). Use the project-wide
+  actions in `Assets/Settings/InputSystem_Actions.inputactions` (`InputSystem.actions`), never
+  `UnityEngine.Input`.
+
+## Versioning
+
+Player Settings > Version holds the base `major.minor.patch` (pre-release `0.x`; `1.0.0` is the
+first GA). Every build is stamped `major.minor.patch.yyyy.MM.dd.hash8`, e.g.
+`1.0.0.2026.09.27.54d78a87`, from the commit's UTC date and hash, with `-dirty` added for
+uncommitted changes. See `Assets/Editor/AgentTooling/BuildVersion.cs`. At runtime it's
+`Application.version`. Bump the base version only when asked.
+
 ## Project layout and conventions
 
 - `Assets/Scenes/Main.unity`: the main scene, first in Build Settings.
