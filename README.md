@@ -63,3 +63,5 @@ Cloud project. If Unity Hub or the editor offers either, decline.
 asset serialization stays on `Force Text`.
 
 CI will be added later.
+
+Cursor session capture test.
