@@ -34,7 +34,7 @@ from pathlib import Path
 GAME_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(GAME_ROOT / ".claude" / "hooks"))
 import devrepo_common as dc  # noqa: E402
-from block_secret_reads import TOKEN_RE, is_sensitive  # noqa: E402
+from block_secret_reads import POLICY, blocked_target  # noqa: E402
 
 AGENT = "cursor"
 TOOL_INPUT_KEYS = ("command", "file_path", "target_file", "path", "pattern", "query",
@@ -45,27 +45,30 @@ FLUSH_EVENTS = {"stop", "preCompact", "sessionEnd"}
 
 # ---------------------------------------------------------------- secrets policy
 
-def secret_targets(event, hook):
+def as_claude_tool(event, hook):
+    """Map a Cursor permission event onto the (tool, tool_input, cwd) shape the shared
+    policy in .claude/hooks/block_secret_reads.py checks."""
     if event == "beforeReadFile":
-        return [hook.get("file_path")]
+        return "Read", {"file_path": hook.get("file_path")}, None
     if event == "beforeShellExecution":
-        return TOKEN_RE.findall(hook.get("command") or "")
+        return "Bash", {"command": hook.get("command")}, hook.get("cwd")
     if event == "preToolUse":
         tool, inp = hook.get("tool_name", ""), hook.get("tool_input") or {}
         if tool == "Shell":
-            return TOKEN_RE.findall(inp.get("command") or "")
+            return "Bash", {"command": inp.get("command")}, inp.get("working_directory")
         if tool in ("Read", "Grep", "Glob"):
-            return [inp.get(k) for k in ("file_path", "target_file", "path") if inp.get(k)]
-    return []
+            return tool, {"file_path": inp.get("file_path") or inp.get("target_file"),
+                          "path": inp.get("path")}, None
+    return "", {}, None
 
 
 def permission(event, hook):
-    for target in secret_targets(event, hook):
-        if target and not str(target).startswith("-") and is_sensitive(target):
-            msg = (f"Blocked by .cursor/hooks/cursor_hook.py: '{target}' matches the secrets policy "
-                   "(.env*, *.pem, *.key, secrets/, credentials/, *secret*, *credential*). "
-                   "Ask the user to supply any needed values another way.")
-            return {"permission": "deny", "user_message": msg, "agent_message": msg}
+    tool, tool_input, cwd = as_claude_tool(event, hook)
+    target = blocked_target(tool, tool_input, cwd)
+    if target:
+        msg = (f"Blocked by .cursor/hooks/cursor_hook.py: '{target}' matches the secrets policy "
+               f"({POLICY}). Ask the user to supply any needed values another way.")
+        return {"permission": "deny", "user_message": msg, "agent_message": msg}
     return {"permission": "allow"}
 
 

@@ -18,6 +18,27 @@ Without it the commit is recorded as a human commit. If the hook prints a `Permi
 (your shell is sandboxed and can't write outside the project), ignore it and don't re-run the
 hook: your session's sync records the commit.
 
+## Branches and pull requests (required)
+
+`main` is protected: no direct pushes. For every change:
+
+1. `git switch -c <type>/<short-name>` (e.g. `feat/player-movement`, `fix/jump-height`,
+   `chore/ci-cache`) from an up-to-date `main`.
+2. Commit with the `Session-Id` trailer, push the branch, and open a PR with
+   `gh pr create --fill` (or a title and body that explain the change).
+3. CI (`.github/workflows/ci.yml`) must pass: hook tests, workflow lint, secret scan, Unity
+   tests, and builds for macOS, Windows and WebGL. Check with `gh pr checks --watch`. Fix
+   failures on the branch rather than working around them.
+4. Merge with a merge commit (`gh pr merge --merge`), and only when the user asks you to.
+   Squash and rebase merges are disabled because they'd give your commits new SHAs on `main`
+   that the dev-history repo doesn't know about.
+
+Every merge to `main` publishes the three builds as the rolling `dev` prerelease on GitHub.
+
+The repo is public. Never commit anything that shouldn't be public: private notes belong in
+the dev-history repo, and paid or third-party assets need a license that allows public
+redistribution. Game content is all rights reserved (see `CONTENT-LICENSE.md`).
+
 ## Working with Unity
 
 Two ways to drive Unity. Pick by whether the editor has the project open.

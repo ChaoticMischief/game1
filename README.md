@@ -54,6 +54,17 @@ Both apply the same secrets-read policy (`.env*`, `*.pem`, `*.key`, `secrets/`,
 `credentials/`), and both tell the agent to end commits with a `Session-Id:` trailer,
 which links each commit to its session.
 
+## CI and builds
+
+Every pull request and push to `main` runs `.github/workflows/ci.yml` on GitHub-hosted runners
+with [GameCI](https://game.ci): hook tests, workflow lint, a gitleaks secret scan, Unity
+EditMode/PlayMode tests, and macOS/Windows/WebGL builds. `main` only accepts pull requests
+that pass all of them. Each merge to `main` publishes the builds as the rolling
+[`dev` prerelease](../../releases/tag/dev).
+
+Unity is activated with a Personal license from the `UNITY_EMAIL` / `UNITY_PASSWORD` repository
+secrets. Pull requests from forks can't use secrets, so their Unity jobs are skipped.
+
 ## Version control: Git/GitHub only
 
 Source control is Git + GitHub (with LFS), not Unity Cloud. Don't install Unity

@@ -1,0 +1,10 @@
+# Keep GitHub Actions current (major-version bumps arrive as PRs through the normal CI gate).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
