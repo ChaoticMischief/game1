@@ -29,6 +29,18 @@ the private dev-history repo whose location (and clone URL) is set in
 `.claude/dev-repo-config.json`. If that repo isn't checked out, the dev-history part
 does nothing.
 
+## Agent tooling
+
+`AGENTS.md` is the shared instruction file for every agent (`CLAUDE.md` imports it). It covers:
+
+- **MCP for Unity** (`com.coplaydev.unity-mcp`, pinned in `Packages/manifest.json`): lets agents
+  drive the open editor over `http://localhost:8080/mcp`. The server starts with the editor, and
+  `.mcp.json` (Claude Code) and `.cursor/mcp.json` (Cursor) point at it.
+- **`tools/unity/unity.sh`**: headless compile, tests, builds and solution sync while the editor is
+  closed.
+- **C# code intelligence**: the `csharp-lsp` plugin for Claude Code (csharp-ls), and optionally
+  Rider's built-in MCP server.
+
 ## AI session capture
 
 Every AI session in this repo is recorded in the dev-history repo:
