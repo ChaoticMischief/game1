@@ -106,7 +106,13 @@ def sync_memory(transcript_path, dev_repo):
     is a snapshot (git history versions it) written under a repo-wide lock; any
     session mirroring it produces the same result.
     """
-    src = Path(transcript_path).resolve().parent / "memory"
+    project_dir = Path(transcript_path).resolve().parent
+    # Only game1's own project folder (Claude Code names it after the path with
+    # non-alphanumerics as "-"). A session launched elsewhere, e.g. ~/dev, has a
+    # different memory dir, and mirroring it would wipe game1's memories.
+    if project_dir.name != re.sub(r"[^A-Za-z0-9]", "-", str(dc.PROJECT_ROOT)):
+        return
+    src = project_dir / "memory"
     dest = dev_repo / "memory" / AGENT
     if not src.is_dir() or (not any(src.iterdir()) and not dest.exists()):
         return
