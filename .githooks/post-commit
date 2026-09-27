@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Agent-agnostic commit capture: record every game1 commit in the dev repo.
+
+- Commit has a "Session-Id: <id>" trailer and the dev repo has a session
+  folder for that id -> append a commit event to that session's events.ndjson,
+  attributed to the agent recorded in its metadata.json.
+- Otherwise -> append to sessions/human/<date>/events.ndjson with agent
+  "human" (no trailer) or "unknown" (trailer with no matching session).
+
+The dev repo location comes from .claude/dev-repo-config.json. If the config
+or the dev repo is missing (e.g. a CI or contributor clone), this is a no-op.
+Never fails the commit.
+"""
+import os
+import re
+import subprocess
+import sys
+
+ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                      capture_output=True, text=True).stdout.strip()
+sys.path.insert(0, os.path.join(ROOT, ".claude", "hooks"))
+try:
+    import devrepo_common as dc
+except ImportError:
+    sys.exit(0)
+
+TRAILER_RE = re.compile(r"^Session-Id:\s*(\S+)\s*$", re.M | re.I)
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", ROOT, *args], capture_output=True, text=True).stdout.strip()
+
+
+def already_recorded(path, sha):
+    try:
+        return f'"game1_sha": "{sha}"' in path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+
+def main():
+    dev_repo = dc.dev_repo_path()
+    if not dev_repo:
+        return
+    sha = git("rev-parse", "HEAD")
+    message = git("log", "-1", "--pretty=%B")
+    committed_at = git("log", "-1", "--pretty=%cI")
+    first_line = message.splitlines()[0] if message else "(empty commit message)"
+
+    match = TRAILER_RE.search(message)
+    session_id = match.group(1) if match else None
+    session_dir = dc.find_session_dir(dev_repo, session_id) if session_id else None
+
+    if session_dir:
+        agent = (dc.read_json(session_dir / "metadata.json", {}) or {}).get("agent") or "unknown"
+        target = session_dir / "events.ndjson"
+    else:
+        agent = "unknown" if session_id else "human"
+        target = dev_repo / "sessions" / "human" / dc.to_utc_iso(committed_at)[:10] / "events.ndjson"
+
+    # post-commit also fires on amend/rebase replays; don't record a sha twice.
+    if already_recorded(target, sha):
+        return
+    dc.append_events(target, [dc.make_event(agent, session_id, "commit", first_line,
+                                            timestamp=committed_at, game1_sha=sha)])
+    dc.build_timeline(dev_repo)
+    dc.safe_push(dev_repo, f"{agent}: commit {sha[:8]}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        print(f"post-commit (dev history) failed: {exc!r}", file=sys.stderr)
+    sys.exit(0)
