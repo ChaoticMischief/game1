@@ -14,7 +14,9 @@ git commit -m "Short summary" --trailer "Session-Id: <id>"
 ```
 
 `.githooks/post-commit` uses it to file the commit under your session in the dev-history repo.
-Without it the commit is recorded as a human commit.
+Without it the commit is recorded as a human commit. If the hook prints a `PermissionError`
+(your shell is sandboxed and can't write outside the project), ignore it and don't re-run the
+hook: your session's sync records the commit.
 
 ## Working with Unity
 

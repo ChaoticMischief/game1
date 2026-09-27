@@ -197,6 +197,34 @@ def redact_file(path, log_path, dev_repo=None):
     return len(findings)
 
 
+def record_missing_commits(dev_repo, agent, session_id, session_dir, limit=200):
+    """Append commit events for game1 commits carrying this session's trailer that
+    .githooks/post-commit didn't record, e.g. because the agent's sandbox (Cursor runs
+    shell commands sandboxed) couldn't write to the dev repo. Returns the number added."""
+    out = subprocess.run(
+        ["git", "-C", str(PROJECT_ROOT), "log", "--all", f"-n{limit}", "--format=%H%x1f%cI%x1f%B%x1e"],
+        capture_output=True, text=True).stdout
+    events_path = Path(session_dir) / "events.ndjson"
+    try:
+        recorded = events_path.read_text(encoding="utf-8")
+    except OSError:
+        recorded = ""
+    trailer = re.compile(rf"^Session-Id:\s*{re.escape(session_id)}\s*$", re.M | re.I)
+    missing = []
+    for record in out.split("\x1e"):
+        parts = record.strip("\n").split("\x1f")
+        if len(parts) != 3 or not trailer.search(parts[2]):
+            continue
+        sha, committed_at, message = parts
+        if f'"game1_sha": "{sha}"' in recorded:
+            continue
+        first_line = message.strip().splitlines()[0] if message.strip() else "(empty commit message)"
+        missing.append(make_event(agent, session_id, "commit", first_line,
+                                  timestamp=committed_at, game1_sha=sha))
+    append_events(events_path, sorted(missing, key=lambda e: e["timestamp"]))
+    return len(missing)
+
+
 def build_timeline(dev_repo):
     subprocess.run([sys.executable, str(dev_repo / "tools" / "build_timeline.py")],
                    capture_output=True, text=True)

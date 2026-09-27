@@ -159,6 +159,9 @@ def flush(dev_repo, session_id, hook, session_dir, meta_path):
                 transcript_name = None
 
     dc.append_events(session_dir / "events.ndjson", events)
+    # Cursor's sandboxed shell can't write to the dev repo, so .githooks/post-commit
+    # usually fails for Cursor's commits; record them from here instead.
+    dc.record_missing_commits(dev_repo, AGENT, session_id, session_dir)
     if log_lines:
         with open(session_dir / "redactions.log", "a", encoding="utf-8") as fh:
             fh.write("".join(l + "\n" for l in log_lines))

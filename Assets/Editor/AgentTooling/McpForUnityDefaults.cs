@@ -16,6 +16,7 @@ namespace Game.EditorTools
         const string HttpTransportScope = "MCPForUnity.HttpTransportScope";
         const string AutoStartOnLoad = "MCPForUnity.AutoStartOnLoad";
         const string TelemetryDisabled = "MCPForUnity.TelemetryDisabled";
+        const string AutoRegisterEnabled = "MCPForUnity.AutoRegisterEnabled";
 
         static McpForUnityDefaults()
         {
@@ -26,6 +27,10 @@ namespace Game.EditorTools
                 EditorPrefs.SetString(HttpTransportScope, "local");
             SetIfUnset(AutoStartOnLoad, true);
             EditorPrefs.SetBool(TelemetryDisabled, true);
+            // Client configs are committed (.mcp.json, .cursor/mcp.json). Left on, the package's
+            // once-per-session StartupConfigRewrite removes the committed .mcp.json entry and
+            // re-registers it in the machine-local ~/.claude.json, so it no longer travels with the repo.
+            EditorPrefs.SetBool(AutoRegisterEnabled, false);
         }
 
         static void SetIfUnset(string key, bool value)
