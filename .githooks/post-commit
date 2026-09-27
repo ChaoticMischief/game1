@@ -68,6 +68,12 @@ def main():
 
 
 if __name__ == "__main__":
+    # Git LFS's own post-commit hook (lockable-file handling); core.hooksPath
+    # bypasses the one `git lfs install` would put in .git/hooks.
+    try:
+        subprocess.run(["git", "lfs", "post-commit"], cwd=ROOT)
+    except OSError:
+        pass
     try:
         main()
     except Exception as exc:
