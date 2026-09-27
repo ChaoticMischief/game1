@@ -37,6 +37,17 @@ def dev_repo_path():
     return path if (path / ".git").exists() else None
 
 
+def invoked_by_cursor(hook):
+    """True when Cursor runs a Claude Code hook via its third-party hook import.
+
+    Cursor loads .claude/settings.json hooks by default; its payloads carry
+    Cursor-only fields. Checked on the payload, not the environment, because
+    Claude Code itself may run inside Cursor's terminal. Cursor sessions are
+    captured by .cursor/hooks/cursor_hook.py instead.
+    """
+    return bool(hook.get("cursor_version") or hook.get("conversation_id"))
+
+
 def log_error(dev_repo, message):
     """Append to an untracked log inside the dev repo's .git dir; never raise."""
     try:

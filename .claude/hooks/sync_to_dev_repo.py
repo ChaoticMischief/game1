@@ -201,7 +201,7 @@ def main():
     except ValueError:
         return 0
     dev_repo = dc.dev_repo_path()
-    if not dev_repo or not hook.get("session_id"):
+    if not dev_repo or not hook.get("session_id") or dc.invoked_by_cursor(hook):
         return 0
     try:
         # Serialize overlapping syncs of the *same* session (e.g. PreCompact

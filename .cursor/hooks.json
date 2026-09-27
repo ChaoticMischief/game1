@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 30 }],
+    "beforeSubmitPrompt": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 10 }],
+    "afterAgentResponse": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 10 }],
+    "postToolUse": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 10 }],
+    "postToolUseFailure": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 10 }],
+    "beforeReadFile": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 10 }],
+    "beforeShellExecution": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 10 }],
+    "preToolUse": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "matcher": "Read|Grep|Glob", "timeout": 10 }],
+    "stop": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 120 }],
+    "preCompact": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 120 }],
+    "sessionEnd": [{ "command": "python3 .cursor/hooks/cursor_hook.py", "timeout": 120 }]
+  }
+}

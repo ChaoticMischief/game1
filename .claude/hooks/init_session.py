@@ -20,7 +20,7 @@ def main():
     except ValueError:
         return 0
     session_id = hook.get("session_id")
-    if not session_id:
+    if not session_id or dc.invoked_by_cursor(hook):
         return 0
 
     print(f"Claude Code session id: {session_id}\n"
