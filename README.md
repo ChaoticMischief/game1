@@ -32,4 +32,12 @@ git config merge.unityyamlmerge.driver \
 git config merge.unityyamlmerge.recursive binary
 ```
 
+## Version control: Git/GitHub only
+
+Source control is Git + GitHub (with LFS), not Unity Cloud. Don't install Unity
+Version Control (`com.unity.collab-proxy`), and don't link the project to a Unity
+Cloud project. If Unity Hub or the editor offers either, decline.
+`ProjectSettings/VersionControlSettings.asset` stays on `Visible Meta Files`, and
+asset serialization stays on `Force Text`.
+
 CI will be added later.
