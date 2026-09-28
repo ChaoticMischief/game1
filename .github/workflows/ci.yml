@@ -1,0 +1,182 @@
+# Verification for every pull request and every push to main. The job names are the
+# required status checks in the main-branch ruleset; rename them there too if you change them.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  hooks:
+    name: Hook tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install gitleaks
+        run: tools/ci/install-gitleaks.sh
+      - name: Run hook tests
+        run: python -m unittest discover -s tests/hooks -v
+
+  lint:
+    name: Workflow lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: tools/ci/install-gitleaks.sh
+      - name: Scan the commits this change adds
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BASE" 2>/dev/null; then
+            range="$BASE..HEAD"
+          else
+            range="HEAD"
+          fi
+          echo "Scanning $range"
+          gitleaks git . --log-opts="$range" --no-banner --redact --verbose
+
+  unity-tests:
+    name: Unity tests
+    # Fork PRs get no secrets, so Unity can't be licensed there; a maintainer re-runs on a branch.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write # the test runner posts a "Test Results" check
+    steps:
+      - name: Check Unity credentials
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -z "$UNITY_EMAIL" ] || [ -z "$UNITY_PASSWORD" ]; then
+            echo "::error title=Unity credentials missing::Set the UNITY_EMAIL and UNITY_PASSWORD repository secrets (see README, CI and builds)."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+      - uses: actions/cache@v6
+        with:
+          path: Library
+          key: Library-tests-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-${{ hashFiles('Assets/**') }}
+          restore-keys: |
+            Library-tests-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-
+            Library-tests-
+      - uses: game-ci/unity-test-runner@v4
+        id: tests
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          testMode: all
+          artifactsPath: test-results
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results
+          path: ${{ steps.tests.outputs.artifactsPath || 'test-results' }}
+          retention-days: 14
+
+  build:
+    name: Build (${{ matrix.targetPlatform }})
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform: [StandaloneOSX, StandaloneWindows64, WebGL]
+    steps:
+      - name: Check Unity credentials
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -z "$UNITY_EMAIL" ] || [ -z "$UNITY_PASSWORD" ]; then
+            echo "::error title=Unity credentials missing::Set the UNITY_EMAIL and UNITY_PASSWORD repository secrets (see README, CI and builds)."
+            exit 1
+          fi
+      - uses: jlumbroso/free-disk-space@v2
+        with:
+          tool-cache: false
+          large-packages: false
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+      # No Library cache for builds: with Unity 6000.6.x a restored Library gets the editor
+      # SIGKILLed (exit 137) right after "Registering precompiled unity dll's" (seen here and in
+      # https://github.com/IvanMurzak/Unity-MCP/pull/1000). Re-test caching after Unity upgrades.
+      - uses: game-ci/unity-builder@v6
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: ${{ matrix.targetPlatform }}
+          # Same entry point as tools/unity/unity.sh, so CI builds match local ones
+          # (including the BuildVersion stamp). It exits the editor itself.
+          buildMethod: Game.EditorTools.AgentCommands.Build
+          customParameters: -buildOutput build/${{ matrix.targetPlatform }}/game1${{ matrix.targetPlatform == 'StandaloneWindows64' && '.exe' || matrix.targetPlatform == 'StandaloneOSX' && '.app' || '' }}
+          manualExit: true
+          versioning: None
+      - uses: actions/upload-artifact@v7
+        with:
+          name: game1-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
+          retention-days: 14
+
+  publish-dev:
+    name: Publish dev build
+    needs: [unity-tests, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-dev
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: game1-*
+          path: artifacts
+      - name: Replace the rolling "dev" prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          short="${GITHUB_SHA::8}"
+          mkdir -p dist
+          for dir in artifacts/game1-*; do
+            platform="${dir#artifacts/game1-}"
+            (cd "$dir" && zip -qry "../../dist/game1-${platform}-${short}.zip" .)
+          done
+          ls -la dist
+          gh release delete dev --cleanup-tag --yes || true
+          gh release create dev dist/*.zip --prerelease --target "$GITHUB_SHA" \
+            --title "Dev build (main @ ${short})" \
+            --notes "Automatic build of main at ${GITHUB_SHA}. Replaced on every merge; not a stable release. Game content is not licensed for redistribution (see CONTENT-LICENSE.md)."

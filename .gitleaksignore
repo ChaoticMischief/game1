@@ -1,0 +1,4 @@
+# Known false positives: gitleaks finding fingerprints (commit:file:rule:line) to skip.
+# A fake AWS-key-shaped test fixture, committed literally before it was moved to runtime assembly.
+0aec2f1c164ba94b95c5c257163f86d5e6a54298:tests/hooks/test_hooks.py:aws-access-token:129
+0aec2f1c164ba94b95c5c257163f86d5e6a54298:tests/hooks/test_hooks.py:aws-access-token:162
