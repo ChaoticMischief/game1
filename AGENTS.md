@@ -18,6 +18,18 @@ Without it the commit is recorded as a human commit. If the hook prints a `Permi
 (your shell is sandboxed and can't write outside the project), ignore it and don't re-run the
 hook: your session's sync records the commit.
 
+## Work tracking
+
+Work is tracked in GitHub Issues (`gh issue list`, `gh issue view N`). Labels: `bug`, `feature`,
+`tech-debt`, `art`, `design`, `audio`, `ci`, `upstream`, `documentation`. When you pick up an
+issue, reference it in the branch name (`feat/42-double-jump`) and close it from the PR body
+(`Fixes #42`). If you find a problem you're not fixing now, open an issue for it instead of
+leaving a TODO.
+
+Design documents are in `docs/design/`; architecture decisions in `docs/adr/` (see
+`docs/README.md`). Update the relevant design doc in the same PR when behavior changes, and add
+an ADR for significant technical decisions.
+
 ## Branches and pull requests (required)
 
 `main` is protected: no direct pushes. For every change:
@@ -43,18 +55,22 @@ redistribution. Game content is all rights reserved (see `CONTENT-LICENSE.md`).
 
 Two ways to drive Unity. Pick by whether the editor has the project open.
 
-**Editor open → MCP for Unity** (server `unityMCP`, `http://localhost:8080/mcp`, configured in
-`.mcp.json` and `.cursor/mcp.json`). Use it to inspect and edit scenes, GameObjects,
+**Editor open → MCP for Unity** (`http://localhost:8080/mcp`; server `UnityMCP` in Claude Code's
+machine-local config, added by `tools/bootstrap-macos.sh`, and `unityMCP` in `.cursor/mcp.json`). Use it to inspect and edit scenes, GameObjects,
 components and assets, read the console, refresh/compile, enter play mode, run tests, take
 screenshots and build. If its tools aren't available, the editor is closed or the server isn't
 running (Unity: Window → MCP for Unity → Start Server).
+
+**Rider's MCP server** (`rider`, user-level config; only while Rider is running) adds IDE
+inspections, refactorings and project-wide search. It's optional: if it isn't available, carry
+on without it. Never enable its "brave mode".
 
 **Editor closed → `tools/unity/unity.sh`** (headless; refuses to run while the editor has the
 project open):
 
 | command | what it does |
 |---|---|
-| `tools/unity/unity.sh compile` | import + compile; prints `error CS…` lines |
+| `tools/unity/unity.sh compile` | import + compile; prints `error CS…` lines and warnings in project code |
 | `tools/unity/unity.sh test [editmode\|playmode\|all]` | run tests; prints counts and each failure |
 | `tools/unity/unity.sh build <mac\|windows\|webgl> [--development]` | build enabled scenes to `Builds/` |
 | `tools/unity/unity.sh sync-solution` | regenerate `game1.sln` / `*.csproj` |
@@ -63,12 +79,15 @@ Logs and NUnit XML results go to `Logs/agent/`. The live editor's log is
 `~/Library/Logs/Unity/Editor.log`.
 
 After changing C# code, verify it: compile (MCP refresh or `unity.sh compile`) and run the
-tests. Don't report work as done while there are compile errors or failing tests.
+tests. Don't report work as done while there are compile errors, new warnings, or failing tests.
 
 ## Engine choices
 
 Stay on current Unity tech: the project will move to Unity 7 as soon as it's GA, so avoid
-deprecated APIs (fix `CS0618` obsolete warnings rather than suppressing them).
+deprecated APIs (fix `CS0618` obsolete warnings rather than suppressing them). The full list of
+what to use, and what to use when a feature first needs it (UI Toolkit, Cinemachine 3,
+Addressables, Localization, `Awaitable`, …), is in `docs/adr/0001-engine-and-tooling.md`. Add a
+package in the PR that first uses it, not ahead of time.
 
 - **Rendering: URP.** Pipeline asset `Assets/Settings/URP.asset` (renderer `URP_Renderer.asset`)
   is the project default; quality levels inherit it. Use URP/Shader Graph shaders, never Built-in
@@ -87,12 +106,29 @@ uncommitted changes. See `Assets/Editor/AgentTooling/BuildVersion.cs`. At runtim
 
 ## Project layout and conventions
 
+Code:
+
+- `Assets/Scripts/Runtime/`: gameplay code, assembly `Game.Runtime`, namespace `Game` (use
+  sub-namespaces per feature folder, e.g. `Game.Player` in `Assets/Scripts/Runtime/Player/`).
+  Add a separate assembly only for a clear boundary (e.g. a reusable system), and give editor-only
+  code its own `Editor` assembly.
+- C# style is in `.editorconfig`: block-scoped namespaces (Unity 6 is C# 9), Unity naming
+  (`m_PascalCase` private fields, `s_PascalCase` private static fields, PascalCase members,
+  camelCase locals), `[SerializeField] private` fields rather than public fields.
+- Analyzers: Microsoft.Unity.Analyzers (`Assets/Plugins/Analyzers/`) run on every compile, raised
+  to warnings by `Assets/Default.ruleset`. Fix `UNT####` warnings; suppress one only with a
+  comment explaining why.
+- Keep MonoBehaviours thin; put logic in plain C# classes that EditMode tests can cover without
+  a scene.
+
+Project:
+
 - `Assets/Scenes/Main.unity`: the main scene, first in Build Settings.
 - `Assets/Editor/AgentTooling/`: `AgentCommands` (the `-executeMethod` entry points behind
   `unity.sh`) and the MCP for Unity defaults. Assembly `Game.EditorTools`.
 - `Assets/Tests/EditMode/`, `Assets/Tests/PlayMode/`: NUnit tests (Unity Test Framework),
-  assemblies `Game.Tests.EditMode` / `Game.Tests.PlayMode`. New gameplay code should live in
-  its own assembly definition so tests can reference it.
+  assemblies `Game.Tests.EditMode` / `Game.Tests.PlayMode`, both referencing `Game.Runtime`.
+- `docs/`: design docs and ADRs (above). `tests/hooks/`: Python tests for the agent hooks.
 - Every asset has a `.meta` file with a GUID. Create, move and rename assets through Unity (MCP
   tools, or move the `.meta` along with the file) and commit `.meta` files with their assets.
   Never hand-edit GUIDs.

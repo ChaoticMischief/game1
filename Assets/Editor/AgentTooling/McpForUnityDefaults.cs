@@ -21,15 +21,15 @@ namespace Game.EditorTools
         static McpForUnityDefaults()
         {
             // HTTP on localhost:8080 lets Claude Code and Cursor share one editor
-            // (.mcp.json and .cursor/mcp.json point there).
+            // (Claude Code UnityMCP entry and .cursor/mcp.json point there).
             SetIfUnset(UseHttpTransport, true);
             if (!EditorPrefs.HasKey(HttpTransportScope))
                 EditorPrefs.SetString(HttpTransportScope, "local");
             SetIfUnset(AutoStartOnLoad, true);
             EditorPrefs.SetBool(TelemetryDisabled, true);
-            // Client configs are committed (.mcp.json, .cursor/mcp.json). Left on, the package's
-            // once-per-session StartupConfigRewrite removes the committed .mcp.json entry and
-            // re-registers it in the machine-local ~/.claude.json, so it no longer travels with the repo.
+            // The package's startup sweep would rewrite client configs on every editor start. Claude
+            // Code's UnityMCP entry is machine-local (tools/bootstrap-macos.sh adds it, in the form the
+            // package itself writes) and Cursor's is committed in .cursor/mcp.json, so skip the sweep.
             EditorPrefs.SetBool(AutoRegisterEnabled, false);
         }
 

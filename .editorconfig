@@ -1,0 +1,77 @@
+# Code style for Rider, Cursor/VS Code, and dotnet tooling. Keep it close to Unity's own C# conventions.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,asmdef,asmref,inputactions,uss,uxml}]
+indent_size = 2
+
+[*.{asmdef,asmref}]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Unity-serialized assets: Unity owns their formatting.
+[*.{unity,prefab,asset,mat,anim,controller,meta}]
+trim_trailing_whitespace = false
+insert_final_newline = unset
+
+[*.cs]
+# Layout
+csharp_new_line_before_open_brace = all
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_prefer_braces = when_multiline:suggestion
+
+# `var` when the type is apparent
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+# Namespaces: block-scoped. Unity 6 compiles C# 9; file-scoped namespaces need C# 10.
+# Revisit when Unity 7 (CoreCLR, newer C#) lands.
+csharp_style_namespace_declarations = block_scoped:suggestion
+
+# Expression-bodied members where short
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+csharp_style_expression_bodied_accessors = when_on_single_line:suggestion
+csharp_style_expression_bodied_methods = false:none
+
+# Modern C#
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+
+# Naming (Unity's C# convention): PascalCase types, methods, properties and constants; camelCase
+# locals and parameters; private instance fields m_PascalCase; private static fields s_PascalCase.
+dotnet_naming_rule.private_static_fields.symbols = private_static_fields
+dotnet_naming_rule.private_static_fields.style = s_pascal
+dotnet_naming_rule.private_static_fields.severity = suggestion
+dotnet_naming_symbols.private_static_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_fields.required_modifiers = static
+dotnet_naming_style.s_pascal.required_prefix = s_
+dotnet_naming_style.s_pascal.capitalization = pascal_case
+
+dotnet_naming_rule.constants.symbols = constants
+dotnet_naming_rule.constants.style = pascal
+dotnet_naming_rule.constants.severity = suggestion
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+dotnet_naming_rule.private_fields.symbols = private_fields
+dotnet_naming_rule.private_fields.style = m_pascal
+dotnet_naming_rule.private_fields.severity = suggestion
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.m_pascal.required_prefix = m_
+dotnet_naming_style.m_pascal.capitalization = pascal_case

@@ -2,7 +2,8 @@
     "name": "Game.Tests.PlayMode",
     "rootNamespace": "Game.Tests",
     "references": [
-        "UnityEngine.TestRunner"
+        "UnityEngine.TestRunner",
+        "Game.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

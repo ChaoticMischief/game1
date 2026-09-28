@@ -1,0 +1,21 @@
+name: Feature or task
+description: New gameplay, content, tooling, or a change to how something works
+labels: [feature]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be possible afterwards, and why it matters
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Behavior, constraints, links to design docs (docs/design/) or ADRs (docs/adr/)
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: How to tell it's finished (tests, what to check in the editor or a build)

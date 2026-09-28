@@ -39,6 +39,11 @@ run_unity() {
   if [ -n "$errors" ]; then
     echo "--- C# compile errors:"; echo "$errors" | head -50
   fi
+  local warnings
+  warnings="$(grep -E '^Assets/.*: warning (CS|UNT)[0-9]+' "$log" | sort -u)"
+  if [ -n "$warnings" ]; then
+    echo "--- C# warnings in project code (fix, don't suppress):"; echo "$warnings" | head -30
+  fi
   if [ $code -ne 0 ] && [ -z "$errors" ]; then
     echo "--- last error lines in log:"; grep -iE 'error|exception|failed' "$log" | grep -v 'Licensing::' | tail -20
   fi
