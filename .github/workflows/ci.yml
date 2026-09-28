@@ -128,13 +128,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           lfs: true
-      - uses: actions/cache@v6
-        with:
-          path: Library
-          key: Library-${{ matrix.targetPlatform }}-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-${{ hashFiles('Assets/**') }}
-          restore-keys: |
-            Library-${{ matrix.targetPlatform }}-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-
-            Library-${{ matrix.targetPlatform }}-
+      # No Library cache for builds: with Unity 6000.6.x a restored Library gets the editor
+      # SIGKILLed (exit 137) right after "Registering precompiled unity dll's" (seen here and in
+      # https://github.com/IvanMurzak/Unity-MCP/pull/1000). Re-test caching after Unity upgrades.
       - uses: game-ci/unity-builder@v6
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}

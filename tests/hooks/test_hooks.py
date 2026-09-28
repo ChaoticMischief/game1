@@ -60,6 +60,7 @@ class ShellPolicy(unittest.TestCase):
         for command in ["gh secret set UNITY_EMAIL -R ChaoticMischief/game1",
                         "gh api -X PATCH repos/o/r -f security_and_analysis.secret_scanning.status=enabled",
                         "grep -rn credential docs/",
+                        "gh cache list --json key --jq '.[].key'",
                         "cat nonexistent-secret.json", "git commit -m 'rotate credentials'"]:
             self.assertIsNone(self.blocked(command), command)
 

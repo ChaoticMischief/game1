@@ -59,13 +59,17 @@ def is_sensitive(path):
     return _is_secret_file_name(p.name) or _in_secret_dir(p) or _has_secret_word(p)
 
 
+# A plausible file name, so jq paths like `.[].key` or `.env` fields in code don't count.
+FILE_NAME_RE = re.compile(r"^[A-Za-z0-9_.][A-Za-z0-9_.@+-]*$")
+
+
 def is_sensitive_shell_token(token, cwd=None):
     """Policy for one shell-command argument: only block what is really a secret path."""
     token = str(token).strip()
     if not token or token.startswith("-"):
         return False
     p = _path(token)
-    if _is_secret_file_name(p.name):
+    if _is_secret_file_name(p.name) and FILE_NAME_RE.match(p.name):
         return True
     resolved = os.path.join(cwd or os.getcwd(), os.path.expanduser(token))
     exists = os.path.exists(resolved)
