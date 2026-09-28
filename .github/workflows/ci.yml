@@ -65,6 +65,9 @@ jobs:
     # Fork PRs get no secrets, so Unity can't be licensed there; a maintainer re-runs on a branch.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write # the test runner posts a "Test Results" check
     steps:
       - name: Check Unity credentials
         env:

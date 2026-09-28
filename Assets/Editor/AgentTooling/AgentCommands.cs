@@ -59,6 +59,7 @@ namespace Game.EditorTools
                 var s = report.summary;
                 Debug.Log($"[AgentCommands] Build {s.result}: {target} {BuildVersion.LastStamped} -> {output}, " +
                           $"{s.totalErrors} errors, {s.totalWarnings} warnings, {s.totalSize} bytes, {s.totalTime}");
+                ReportForGameCI(s);
                 if (s.result != BuildResult.Succeeded)
                     throw new Exception($"Build {s.result}");
             });
@@ -84,6 +85,28 @@ namespace Game.EditorTools
                 AssetDatabase.SaveAssets();
                 Debug.Log($"[AgentCommands] Main scene ready: {path}");
             });
+        }
+
+        /// <summary>
+        /// GameCI (CI's unity-builder) decides pass/fail by scanning the log for the lines its own
+        /// default build method prints: "Build succeeded!", or a "# Build results #" block whose
+        /// "Errors:" count must be 0. Print the same so it accepts this custom build method.
+        /// </summary>
+        static void ReportForGameCI(BuildSummary s)
+        {
+            var succeeded = s.result == BuildResult.Succeeded;
+            var errors = succeeded ? s.totalErrors : Math.Max(1, s.totalErrors);
+            var lines = string.Join("\n",
+                "###########################",
+                "#      Build results      #",
+                "###########################",
+                $"Duration: {s.totalTime}",
+                $"Warnings: {s.totalWarnings}",
+                $"Errors: {errors}",
+                $"Size: {s.totalSize} bytes",
+                "###########################",
+                succeeded ? "Build succeeded!" : $"Build {s.result}!");
+            Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "{0}", lines);
         }
 
         static string DefaultOutput(BuildTarget target) => target switch

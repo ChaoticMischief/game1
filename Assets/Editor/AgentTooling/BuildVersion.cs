@@ -62,7 +62,10 @@ namespace Game.EditorTools
             if (string.IsNullOrEmpty(hash)) hash = Environment.GetEnvironmentVariable("GITHUB_SHA");
             var date = Git(repoRoot, "log -1 --format=%cd --date=format-local:%Y.%m.%d");
             if (string.IsNullOrEmpty(date)) date = DateTime.UtcNow.ToString("yyyy.MM.dd");
-            var dirty = !string.IsNullOrEmpty(Git(repoRoot, "status --porcelain --untracked-files=no"));
+            var changes = Git(repoRoot, "status --porcelain --untracked-files=no");
+            var dirty = !string.IsNullOrEmpty(changes);
+            if (dirty)
+                Debug.Log($"[BuildVersion] uncommitted changes (build marked -dirty):\n{changes}");
 
             var shortHash = string.IsNullOrEmpty(hash) ? "nogit" : hash.Substring(0, Math.Min(8, hash.Length));
             return $"{BaseVersion(baseVersion)}.{date}.{shortHash}{(dirty ? "-dirty" : "")}";
