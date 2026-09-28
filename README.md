@@ -34,8 +34,9 @@ does nothing.
 `AGENTS.md` is the shared instruction file for every agent (`CLAUDE.md` imports it). It covers:
 
 - **MCP for Unity** (`com.coplaydev.unity-mcp`, pinned in `Packages/manifest.json`): lets agents
-  drive the open editor over `http://localhost:8080/mcp`. The server starts with the editor, and
-  `.mcp.json` (Claude Code) and `.cursor/mcp.json` (Cursor) point at it.
+  drive the open editor over `http://localhost:8080/mcp`. The server starts with the editor.
+  Cursor's entry is committed in `.cursor/mcp.json`; Claude Code's (`UnityMCP`) is machine-local,
+  added by the bootstrap script, because the package rewrites Claude Code's config itself.
 - **`tools/unity/unity.sh`**: headless compile, tests, builds and solution sync while the editor is
   closed.
 - **C# code intelligence**: the `csharp-lsp` plugin for Claude Code (csharp-ls), and optionally
