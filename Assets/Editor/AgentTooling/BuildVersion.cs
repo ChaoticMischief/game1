@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Build;
@@ -62,7 +63,8 @@ namespace Game.EditorTools
             if (string.IsNullOrEmpty(hash)) hash = Environment.GetEnvironmentVariable("GITHUB_SHA");
             var date = Git(repoRoot, "log -1 --format=%cd --date=format-local:%Y.%m.%d");
             if (string.IsNullOrEmpty(date)) date = DateTime.UtcNow.ToString("yyyy.MM.dd");
-            var changes = Git(repoRoot, "status --porcelain --untracked-files=no");
+            var changes = string.Join("\n", (Git(repoRoot, "status --porcelain --untracked-files=no") ?? "")
+                .Split('\n').Where(line => line.Trim().Length > 0 && !IsUnityManagedCache(line)));
             var dirty = !string.IsNullOrEmpty(changes);
             if (dirty)
                 Debug.Log($"[BuildVersion] uncommitted changes (build marked -dirty):\n{changes}");
@@ -70,6 +72,14 @@ namespace Game.EditorTools
             var shortHash = string.IsNullOrEmpty(hash) ? "nogit" : hash.Substring(0, Math.Min(8, hash.Length));
             return $"{BaseVersion(baseVersion)}.{date}.{shortHash}{(dirty ? "-dirty" : "")}";
         }
+
+        /// <summary>
+        /// Files Unity rewrites by itself, so their changes don't mean the source differs from the
+        /// commit. URP clears the runtime-settings cache in *RenderPipelineGlobalSettings.asset on
+        /// a fresh import (every CI run) and refills it during the build, after the stamp is taken.
+        /// </summary>
+        static bool IsUnityManagedCache(string porcelainLine) =>
+            porcelainLine.EndsWith("RenderPipelineGlobalSettings.asset", StringComparison.Ordinal);
 
         static string ProjectRoot() => System.IO.Path.GetDirectoryName(UnityEngine.Application.dataPath);
 
