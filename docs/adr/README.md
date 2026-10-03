@@ -26,3 +26,4 @@ What becomes easier or harder; follow-up work.
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-engine-and-tooling.md) | Engine, packages and tooling baseline | Accepted |
+| [0002](0002-crash-reporting-sentry.md) | Crash and error reporting with Sentry | Accepted |

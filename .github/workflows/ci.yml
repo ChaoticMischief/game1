@@ -140,7 +140,9 @@ jobs:
           # Same entry point as tools/unity/unity.sh, so CI builds match local ones
           # (including the BuildVersion stamp). It exits the editor itself.
           buildMethod: Game.EditorTools.AgentCommands.Build
-          customParameters: -buildOutput build/${{ matrix.targetPlatform }}/game1${{ matrix.targetPlatform == 'StandaloneWindows64' && '.exe' || matrix.targetPlatform == 'StandaloneOSX' && '.app' || '' }}
+          # -sentryDsn: SentryDsn.cs injects it into the build (GameCI doesn't forward env vars
+          # into its container). Logs mask it; without the secret, builds have Sentry off.
+          customParameters: -buildOutput build/${{ matrix.targetPlatform }}/game1${{ matrix.targetPlatform == 'StandaloneWindows64' && '.exe' || matrix.targetPlatform == 'StandaloneOSX' && '.app' || '' }} -sentryDsn ${{ secrets.SENTRY_DSN }}
           manualExit: true
           versioning: None
       - uses: actions/upload-artifact@v7

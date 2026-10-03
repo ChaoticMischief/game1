@@ -54,7 +54,9 @@ namespace Game.EditorTools
                 }
                 finally
                 {
-                    BuildVersion.Restore(); // post-build callbacks don't run when a build fails
+                    // post-build callbacks don't run when a build fails
+                    BuildVersion.Restore();
+                    SentryDsn.Restore();
                 }
                 var s = report.summary;
                 Debug.Log($"[AgentCommands] Build {s.result}: {target} {BuildVersion.LastStamped} -> {output}, " +
