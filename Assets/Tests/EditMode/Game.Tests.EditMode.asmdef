@@ -4,7 +4,8 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Game.EditorTools"
+        "Game.EditorTools",
+        "Game.Runtime"
     ],
     "includePlatforms": [
         "Editor"

@@ -84,3 +84,6 @@ __pycache__/
 
 # Unity/Mono native crash dumps
 mono_crash.*.json
+
+# JetBrains Rider per-machine project settings
+.idea/

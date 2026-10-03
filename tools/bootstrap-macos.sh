@@ -41,6 +41,13 @@ command -v csharp-ls >/dev/null || /usr/local/share/dotnet/dotnet tool install -
 command -v claude >/dev/null && claude plugin install csharp-lsp@claude-plugins-official --scope project >/dev/null \
   && git checkout -- .claude/settings.json 2>/dev/null   # keep the committed formatting
 
+step "Unity MCP server for Claude Code"
+# Machine-local, in exactly the form MCP for Unity's own configurator writes: it removes any
+# unityMCP/UnityMCP entry from other scopes (including a committed .mcp.json) and re-adds this.
+if command -v claude >/dev/null; then
+  claude mcp get UnityMCP >/dev/null 2>&1 || claude mcp add --scope local --transport http UnityMCP http://127.0.0.1:8080/mcp
+fi
+
 step "Git config for this clone"
 git lfs install --skip-repo >/dev/null   # global LFS filters; hooks come from .githooks
 git config core.hooksPath .githooks

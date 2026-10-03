@@ -1,0 +1,38 @@
+name: Bug report
+description: Something in the game or tooling doesn't work as expected
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Build version
+      description: Shown in the corner of dev builds, e.g. 0.1.0.2026.09.28.1a2b3c4d (or "editor", or a commit SHA)
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [macOS, Windows, WebGL (browser), Unity Editor, CI / tooling]
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots or Sentry link
+      description: Player.log / Editor.log excerpts, screenshots, or a link to the Sentry event
