@@ -28,7 +28,8 @@ report into our project should be committed.
   that don't set one.
 - **Off in the editor** (`CaptureInEditor` false), so Play mode doesn't report.
 - **Debug symbols are uploaded by CI builds** (added for #3), so native crashes symbolicate
-  and C# frames from release builds get file and line numbers.
+  and C# frames from release builds get file and line numbers. Source upload is on too (the
+  code is public anyway), so Sentry shows the surrounding code in stack traces.
   `Game.EditorTools.SentryCliConfiguration` gives Sentry's build step the auth token from
   `-sentryAuthToken` (the `SENTRY_AUTH_TOKEN` repository secret) or the environment, and takes
   the organization from the org token; `SentryCliOptions.asset` holds only the project name.
