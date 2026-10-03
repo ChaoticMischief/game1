@@ -35,7 +35,7 @@ report into our project should be committed.
 
 - Test that reporting works with any player: run it with `-sentry-test` and it logs one error
   and one exception naming its version.
-- Debug-symbol upload is off until a Sentry auth token is set up (tracked in an issue). Until
+- Debug-symbol upload is off until a Sentry auth token is set up (issue #3). Until
   then, native crash stack traces are unsymbolicated, and IL2CPP line numbers (which need the
   upload) are off, so WebGL C# stack traces have no line numbers. Mono builds (macOS, Windows)
   are unaffected.
