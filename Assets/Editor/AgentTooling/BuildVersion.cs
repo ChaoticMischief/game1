@@ -28,7 +28,8 @@ namespace Game.EditorTools
         /// <summary>The version stamped into the most recent build.</summary>
         public static string LastStamped { get; private set; }
 
-        public int callbackOrder => 0;
+        // First, so the uncommitted-changes check runs before other build steps (SentryDsn) touch assets.
+        public int callbackOrder => int.MinValue;
 
         public void OnPreprocessBuild(BuildReport report)
         {

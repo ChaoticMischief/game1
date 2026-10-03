@@ -66,6 +66,11 @@ that pass all of them. Each merge to `main` publishes the builds as the rolling
 Unity is activated with a Personal license from the `UNITY_EMAIL` / `UNITY_PASSWORD` repository
 secrets. Pull requests from forks can't use secrets, so their Unity jobs are skipped.
 
+Builds report errors and crashes to Sentry when they're given a DSN: CI passes the `SENTRY_DSN`
+repository secret, and local builds read `SENTRY_DSN` or `UserSettings/SentryDsn.txt`. The DSN
+is never committed. Run any build with `-sentry-test` to send a test error. See
+[ADR 0002](docs/adr/0002-crash-reporting-sentry.md).
+
 ## Version control: Git/GitHub only
 
 Source control is Git + GitHub (with LFS), not Unity Cloud. Don't install Unity
