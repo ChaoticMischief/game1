@@ -27,6 +27,13 @@ report into our project should be committed.
   contains one. Without a DSN the SDK stays off: in the editor, in forks and in local builds
   that don't set one.
 - **Off in the editor** (`CaptureInEditor` false), so Play mode doesn't report.
+- **Debug symbols are uploaded by CI builds** (added for #3), so native crashes symbolicate
+  and C# frames from release builds get file and line numbers. Source upload is on too (the
+  code is public anyway), so Sentry shows the surrounding code in stack traces.
+  `Game.EditorTools.SentryCliConfiguration` gives Sentry's build step the auth token from
+  `-sentryAuthToken` (the `SENTRY_AUTH_TOKEN` repository secret) or the environment, and takes
+  the organization from the org token; `SentryCliOptions.asset` holds only the project name.
+  Local builds have no token and skip the upload. A failed upload fails the CI build.
 - **Exceptions to 0001**, for Sentry's sake only: the SDK requires uGUI (`com.unity.ugui`, for
   its optional user-feedback form) and loads its options from `Resources/`. Our own UI still uses
   UI Toolkit, and our own content still doesn't go in `Resources/`.
@@ -35,8 +42,12 @@ report into our project should be committed.
 
 - Test that reporting works with any player: run it with `-sentry-test` and it logs one error
   and one exception naming its version.
-- Debug-symbol upload is off until a Sentry auth token is set up (issue #3). Until
-  then, native crash stack traces are unsymbolicated, and IL2CPP line numbers (which need the
-  upload) are off, so WebGL C# stack traces have no line numbers. Mono builds (macOS, Windows)
-  are unaffected.
+- Sentry's Unity SDK only uploads symbols for standalone (macOS, Windows, Linux) and console
+  builds, not WebGL. IL2CPP line numbers are therefore off: WebGL is our only IL2CPP build, and
+  its C# stack traces have no line numbers. Native and C# symbols for macOS and Windows are
+  uploaded.
+- While sentry-cli runs, Sentry writes the auth token to `sentry.properties` in the build
+  folder and deletes it afterwards. The builds are published, so CI fails a build whose output
+  contains that file or the token, and an EditMode test fails if the committed
+  `SentryCliOptions.asset` contains a token.
 - Sentry's free plan has an event quota and a single user; revisit if either becomes limiting.

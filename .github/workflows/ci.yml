@@ -140,11 +140,29 @@ jobs:
           # Same entry point as tools/unity/unity.sh, so CI builds match local ones
           # (including the BuildVersion stamp). It exits the editor itself.
           buildMethod: Game.EditorTools.AgentCommands.Build
-          # -sentryDsn: SentryDsn.cs injects it into the build (GameCI doesn't forward env vars
-          # into its container). Logs mask it; without the secret, builds have Sentry off.
-          customParameters: -buildOutput build/${{ matrix.targetPlatform }}/game1${{ matrix.targetPlatform == 'StandaloneWindows64' && '.exe' || matrix.targetPlatform == 'StandaloneOSX' && '.app' || '' }} -sentryDsn ${{ secrets.SENTRY_DSN }}
+          # Sentry secrets as arguments, since GameCI doesn't forward env vars into its container
+          # (logs mask them): -sentryDsn goes into the build (SentryDsn.cs); -sentryAuthToken is
+          # only for uploading debug symbols (SentryCliConfiguration.cs). Without them, builds
+          # have Sentry off and skip the upload.
+          customParameters: -buildOutput build/${{ matrix.targetPlatform }}/game1${{ matrix.targetPlatform == 'StandaloneWindows64' && '.exe' || matrix.targetPlatform == 'StandaloneOSX' && '.app' || '' }} -sentryDsn ${{ secrets.SENTRY_DSN }} -sentryAuthToken ${{ secrets.SENTRY_AUTH_TOKEN }}
           manualExit: true
           versioning: None
+      # Builds are published publicly (the dev prerelease). Sentry writes the auth token to
+      # sentry.properties in the build folder during symbol upload and deletes it afterwards;
+      # make sure neither the file nor the token made it into the output.
+      - name: Check the build doesn't contain the Sentry auth token
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          BUILD_DIR: build/${{ matrix.targetPlatform }}
+        run: |
+          leaked=0
+          if find "$BUILD_DIR" -name sentry.properties | grep .; then
+            echo "::error title=Sentry token leak::sentry.properties left in the build output"; leaked=1
+          fi
+          if [ -n "$SENTRY_AUTH_TOKEN" ] && grep -r -l -a -F -- "$SENTRY_AUTH_TOKEN" "$BUILD_DIR"; then
+            echo "::error title=Sentry token leak::the auth token is in the build output"; leaked=1
+          fi
+          exit $leaked
       - uses: actions/upload-artifact@v7
         with:
           name: game1-${{ matrix.targetPlatform }}
