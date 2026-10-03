@@ -20,7 +20,7 @@ namespace Game.EditorTools
     /// ProjectSettings.asset. Runs for every build path: tools/unity/unity.sh, MCP and the
     /// editor's Build Profiles window.
     /// </summary>
-    public class BuildVersion : IPreprocessBuildWithReport, IPostprocessBuildWithReport
+    public class BuildVersion : IPreprocessBuildWithReport
     {
         static readonly Regex BasePattern = new(@"^(\d+)\.(\d+)\.(\d+)");
         static string s_BaseBeforeBuild;
@@ -37,8 +37,6 @@ namespace Game.EditorTools
             PlayerSettings.bundleVersion = LastStamped = Compute(s_BaseBeforeBuild, ProjectRoot());
             Debug.Log($"[BuildVersion] {PlayerSettings.bundleVersion}");
         }
-
-        public void OnPostprocessBuild(BuildReport report) => Restore();
 
         /// <summary>Put Player Settings back to the base version (also called if a build throws).</summary>
         public static void Restore()
@@ -106,5 +104,16 @@ namespace Game.EditorTools
                 return null;
             }
         }
+    }
+
+    /// <summary>
+    /// Runs <see cref="BuildVersion.Restore"/> after every other post-build step: its SaveAssets
+    /// would otherwise also save settings that later steps put back (e.g. the Input System's
+    /// temporary preloaded asset).
+    /// </summary>
+    public class BuildVersionRestore : IPostprocessBuildWithReport
+    {
+        public int callbackOrder => int.MaxValue;
+        public void OnPostprocessBuild(BuildReport report) => BuildVersion.Restore();
     }
 }
