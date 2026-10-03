@@ -135,6 +135,10 @@ jobs:
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          # v6 looks up the latest game-ci CLI release through the GitHub API, authenticated only
+          # if this is set. Unauthenticated, it shares the runner IP's 60-requests/hour limit
+          # with other users' jobs and intermittently fails with "GitHub API returned 403".
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
           # Same entry point as tools/unity/unity.sh, so CI builds match local ones
@@ -189,6 +193,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
+          # If another merge has landed on main since this run started, skip: its own run will
+          # publish. Tagging an older commit whose workflow files differ from main's also fails
+          # (403 "Resource not accessible by integration"): GITHUB_TOKEN can't introduce
+          # workflow-file changes in a new ref.
+          head="$(gh api "repos/$GH_REPO/commits/main" --jq .sha)"
+          if [ "$head" != "$GITHUB_SHA" ]; then
+            echo "::notice title=Dev build not published::main has moved on to ${head::8}; its run publishes instead."
+            exit 0
+          fi
           short="${GITHUB_SHA::8}"
           mkdir -p dist
           for dir in artifacts/game1-*; do
