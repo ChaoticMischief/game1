@@ -57,6 +57,7 @@ namespace Game.EditorTools
                     // post-build callbacks don't run when a build fails
                     BuildVersion.Restore();
                     SentryDsn.Restore();
+                    SentryCliConfiguration.ClearToken();
                 }
                 var s = report.summary;
                 Debug.Log($"[AgentCommands] Build {s.result}: {target} {BuildVersion.LastStamped} -> {output}, " +

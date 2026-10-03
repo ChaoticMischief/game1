@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -25,7 +24,7 @@ namespace Game.EditorTools
 
         static bool s_Injected;
 
-        // Before Sentry's own build processors, which read the options. SentryDsnRestore clears it
+        // Before Sentry's own build processors, which read the options. SentryBuildCleanup clears it
         // again after them.
         public int callbackOrder => -1000;
 
@@ -54,18 +53,7 @@ namespace Game.EditorTools
         public static string Redact(string dsn) =>
             Uri.TryCreate(dsn, UriKind.Absolute, out var uri) ? $"{uri.Host}{uri.AbsolutePath}" : "unparseable DSN";
 
-        static string Find()
-        {
-            var args = Environment.GetCommandLineArgs();
-            var i = Array.IndexOf(args, "-sentryDsn");
-            // An empty secret leaves the flag without a value, followed by the next flag or nothing.
-            var dsn = i >= 0 && i + 1 < args.Length && !args[i + 1].StartsWith("-") ? args[i + 1] : null;
-            if (string.IsNullOrWhiteSpace(dsn))
-                dsn = Environment.GetEnvironmentVariable("SENTRY_DSN");
-            if (string.IsNullOrWhiteSpace(dsn) && File.Exists(LocalFile))
-                dsn = File.ReadAllText(LocalFile);
-            return dsn?.Trim();
-        }
+        static string Find() => BuildSecrets.Find("-sentryDsn", "SENTRY_DSN", LocalFile);
 
         static void Set(string dsn)
         {
@@ -81,10 +69,18 @@ namespace Game.EditorTools
         }
     }
 
-    /// <summary>Runs <see cref="SentryDsn.Restore"/> after every other post-build step.</summary>
-    public class SentryDsnRestore : IPostprocessBuildWithReport
+    /// <summary>
+    /// Clears the Sentry DSN and auth token after every other post-build step, including
+    /// Sentry's symbol upload.
+    /// </summary>
+    public class SentryBuildCleanup : IPostprocessBuildWithReport
     {
         public int callbackOrder => int.MaxValue;
-        public void OnPostprocessBuild(BuildReport report) => SentryDsn.Restore();
+
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            SentryDsn.Restore();
+            SentryCliConfiguration.ClearToken();
+        }
     }
 }

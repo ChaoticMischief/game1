@@ -68,7 +68,8 @@ secrets. Pull requests from forks can't use secrets, so their Unity jobs are ski
 
 Builds report errors and crashes to Sentry when they're given a DSN: CI passes the `SENTRY_DSN`
 repository secret, and local builds read `SENTRY_DSN` or `UserSettings/SentryDsn.txt`. The DSN
-is never committed. Run any build with `-sentry-test` to send a test error. See
+is never committed. CI builds also upload debug symbols, using the `SENTRY_AUTH_TOKEN` secret.
+Run any build with `-sentry-test` to send a test error. See
 [ADR 0002](docs/adr/0002-crash-reporting-sentry.md).
 
 ## Version control: Git/GitHub only
