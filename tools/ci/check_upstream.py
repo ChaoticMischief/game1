@@ -148,8 +148,8 @@ def check():
 def markdown(rows, errors):
     lines = []
     if rows:
-        lines += ["These dependencies have newer versions upstream. Update each in its own PR, so CI tests",
-                  "it on its own, and check release notes for breaking changes.", "",
+        lines += ["These dependencies have newer versions upstream. Update them together in one PR (CI",
+                  "builds are slow), splitting only if one breaks, and check release notes for breaking changes.", "",
                   "| Component | Current | Available | Notes |", "|---|---|---|---|"]
         lines += [f"| `{c}` | {cur} | **{new}** | {note} |" for c, cur, new, note in rows]
     else:

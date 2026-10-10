@@ -27,9 +27,19 @@ Rules:
 
 ## Version 1 room: the bedroom
 
-One room with one team puzzle *(default)*: a pressure plate opens a door. The bear stands on the
-plate to hold the door open, and the rabbit goes through the gap (or over the shelf) to the
-exit. Greybox only.
+One room, one team puzzle, greybox only. It is built by `Game > Build Bedroom Greybox`
+(`Assets/Editor/Greybox/BedroomGreyboxBuilder.cs`), and `BedroomPuzzleTests` plays it through.
+
+1. The bear stands on the pressure plate. It is heavy enough (mass 5 vs. 3 needed) and the door
+   opens. It must stay there: the door shuts if the plate is released.
+2. The rabbit starts behind the bear, hops over it, and goes through the open door.
+3. Beyond the door a lever sits on a shelf at 1.6 units. Only the rabbit's jump (2.2) reaches it;
+   the bear's (1.0) cannot, but the bear can walk underneath. The lever latches the door open.
+4. The bear steps off the plate and follows through the door.
+5. Both plushies in the green exit zone completes the room.
+
+Falling out of the world resets the room. Tuning lives in the builder: bear mass 5, speed 4, jump
+1.0; rabbit mass 1, speed 5, jump 2.2; plate needs mass 3; lever needs 0.5.
 
 ## Hints
 
