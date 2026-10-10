@@ -28,6 +28,7 @@ namespace Game.EditorTools
         /// <summary>
         /// Build the scenes enabled in Build Settings.
         /// Args: -buildTarget &lt;StandaloneOSX|StandaloneWindows64|WebGL&gt; -buildOutput &lt;path&gt; [-development]
+        /// [-fastBuild] (see <see cref="FastBuild"/>)
         /// </summary>
         public static void Build()
         {
@@ -55,6 +56,7 @@ namespace Game.EditorTools
                 finally
                 {
                     // post-build callbacks don't run when a build fails
+                    FastBuild.Restore();
                     BuildVersion.Restore();
                     SentryDsn.Restore();
                     SentryCliConfiguration.ClearToken();

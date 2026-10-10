@@ -1,0 +1,20 @@
+# Pull this checkout's Git LFS files through the Actions cache, so CI doesn't re-download them
+# from GitHub on every job: LFS bandwidth is quota'd even for public repos. Use after
+# actions/checkout without `lfs: true`. The cache key is the set of LFS object IDs at HEAD, so
+# it only changes when LFS content does.
+name: Pull LFS files (cached)
+description: git lfs pull, with .git/lfs restored from and saved to the Actions cache
+runs:
+  using: composite
+  steps:
+    - name: List LFS objects
+      id: lfs
+      shell: bash
+      run: echo "hash=$(git lfs ls-files --long | cut -d' ' -f1 | sort | sha256sum | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v6
+      with:
+        path: .git/lfs
+        key: lfs-${{ steps.lfs.outputs.hash }}
+    - name: Pull LFS files
+      shell: bash
+      run: git lfs pull
