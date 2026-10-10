@@ -1,0 +1,57 @@
+# Weekly check for newer Unity editor, package and analyzer versions (tools/ci/check_upstream.py).
+# Keeps one open issue labelled `upstream` listing what's behind, and closes it when nothing is.
+# Each update is then a normal PR through CI. GitHub Actions versions are Dependabot's job.
+name: Upstream updates
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check upstream versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Check
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/ci/check_upstream.py --markdown "$RUNNER_TEMP/upstream.md"
+      - name: Update the upstream issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BEHIND: ${{ steps.check.outputs.behind }}
+          FAILED: ${{ steps.check.outputs.failed }}
+          BODY: ${{ runner.temp }}/upstream.md
+        run: |
+          title="Upstream updates available"
+          issue="$(gh issue list --label upstream --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')"
+          if [ "$BEHIND" = "true" ]; then
+            if [ -n "$issue" ]; then
+              gh issue edit "$issue" --body-file "$BODY"
+              echo "Updated #$issue"
+            else
+              gh issue create --title "$title" --label upstream --body-file "$BODY"
+            fi
+          elif [ "$FAILED" = "true" ]; then
+            echo "::warning title=Upstream check incomplete::some checks failed; leaving the issue as it is"
+          elif [ -n "$issue" ]; then
+            gh issue close "$issue" --comment "Everything checked is up to date now."
+            echo "Closed #$issue"
+          else
+            echo "Up to date; no issue needed."
+          fi

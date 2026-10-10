@@ -63,6 +63,17 @@ EditMode/PlayMode tests, and macOS/Windows/WebGL builds. `main` only accepts pul
 that pass all of them. Each merge to `main` publishes the builds as the rolling
 [`dev` prerelease](../../releases/tag/dev).
 
+- **Code coverage:** the Unity tests job records coverage of `Game.*` assemblies (EditMode and
+  PlayMode combined), shows a summary on the run's page, and uploads the HTML report as the
+  `code-coverage` artifact.
+- **Faster PR builds:** pull requests build WebGL with `-fastBuild` (IL2CPP "Faster (smaller)
+  builds", Debug C++ configuration); the published `main` builds stay fully optimized.
+- **LFS cache:** jobs pull Git LFS files through the Actions cache
+  (`.github/actions/lfs-pull-cached`), so they don't use the LFS bandwidth quota every run.
+- **Upstream updates:** `.github/workflows/upstream.yml` runs weekly (or on demand from the
+  Actions tab) and keeps one `upstream` issue listing newer Unity editor, package and analyzer
+  versions. Dependabot covers GitHub Actions.
+
 Unity is activated with a Personal license from the `UNITY_EMAIL` / `UNITY_PASSWORD` repository
 secrets. Pull requests from forks can't use secrets, so their Unity jobs are skipped.
 

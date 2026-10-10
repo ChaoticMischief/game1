@@ -128,7 +128,8 @@ Project:
   `unity.sh`) and the MCP for Unity defaults. Assembly `Game.EditorTools`.
 - `Assets/Tests/EditMode/`, `Assets/Tests/PlayMode/`: NUnit tests (Unity Test Framework),
   assemblies `Game.Tests.EditMode` / `Game.Tests.PlayMode`, both referencing `Game.Runtime`.
-- `docs/`: design docs and ADRs (above). `tests/hooks/`: Python tests for the agent hooks.
+- `docs/`: design docs and ADRs (above). `tests/hooks/`: Python tests for the agent hooks;
+  `tests/ci/`: tests for the `tools/ci/` scripts.
 - Every asset has a `.meta` file with a GUID. Create, move and rename assets through Unity (MCP
   tools, or move the `.meta` along with the file) and commit `.meta` files with their assets.
   Never hand-edit GUIDs.

@@ -28,6 +28,9 @@ jobs:
         run: tools/ci/install-gitleaks.sh
       - name: Run hook tests
         run: python -m unittest discover -s tests/hooks -v
+      # Same job (its name is a required check): tests for tools/ci scripts.
+      - name: Run CI tool tests
+        run: python -m unittest discover -s tests/ci -v
 
   lint:
     name: Workflow lint
@@ -79,8 +82,7 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@v7
-        with:
-          lfs: true
+      - uses: ./.github/actions/lfs-pull-cached
       - uses: actions/cache@v6
         with:
           path: Library
@@ -96,11 +98,31 @@ jobs:
         with:
           testMode: all
           artifactsPath: test-results
+          # Code coverage of our code (com.unity.testtools.codecoverage), EditMode and PlayMode
+          # combined: an HTML report, badges and Report/Summary.md.
+          coverageOptions: 'generateAdditionalMetrics;generateHtmlReport;generateBadgeReport;dontClear;assemblyFilters:+Game.*,-Game.Tests.*'
+      - name: Coverage summary
+        if: always()
+        env:
+          COVERAGE_DIR: ${{ steps.tests.outputs.coveragePath || 'CodeCoverage' }}
+        run: |
+          summary="$COVERAGE_DIR/Report/Summary.md"
+          if [ -f "$summary" ]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=No coverage report::$summary not found"
+          fi
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results
           path: ${{ steps.tests.outputs.artifactsPath || 'test-results' }}
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: code-coverage
+          path: ${{ steps.tests.outputs.coveragePath || 'CodeCoverage' }}
           retention-days: 14
 
   build:
@@ -126,8 +148,7 @@ jobs:
           tool-cache: false
           large-packages: false
       - uses: actions/checkout@v7
-        with:
-          lfs: true
+      - uses: ./.github/actions/lfs-pull-cached
       # No Library cache for builds: with Unity 6000.6.x a restored Library gets the editor
       # SIGKILLed (exit 137) right after "Registering precompiled unity dll's" (seen here and in
       # https://github.com/IvanMurzak/Unity-MCP/pull/1000). Re-test caching after Unity upgrades.
@@ -144,11 +165,13 @@ jobs:
           # Same entry point as tools/unity/unity.sh, so CI builds match local ones
           # (including the BuildVersion stamp). It exits the editor itself.
           buildMethod: Game.EditorTools.AgentCommands.Build
+          # -fastBuild on pull requests: faster, less optimized WebGL builds (FastBuild.cs); the
+          # published main builds stay fully optimized.
           # Sentry secrets as arguments, since GameCI doesn't forward env vars into its container
           # (logs mask them): -sentryDsn goes into the build (SentryDsn.cs); -sentryAuthToken is
           # only for uploading debug symbols (SentryCliConfiguration.cs). Without them, builds
           # have Sentry off and skip the upload.
-          customParameters: -buildOutput build/${{ matrix.targetPlatform }}/game1${{ matrix.targetPlatform == 'StandaloneWindows64' && '.exe' || matrix.targetPlatform == 'StandaloneOSX' && '.app' || '' }} -sentryDsn ${{ secrets.SENTRY_DSN }} -sentryAuthToken ${{ secrets.SENTRY_AUTH_TOKEN }}
+          customParameters: -buildOutput build/${{ matrix.targetPlatform }}/game1${{ matrix.targetPlatform == 'StandaloneWindows64' && '.exe' || matrix.targetPlatform == 'StandaloneOSX' && '.app' || '' }} -sentryDsn ${{ secrets.SENTRY_DSN }} -sentryAuthToken ${{ secrets.SENTRY_AUTH_TOKEN }}${{ github.event_name == 'pull_request' && ' -fastBuild' || '' }}
           manualExit: true
           versioning: None
       # Builds are published publicly (the dev prerelease). Sentry writes the auth token to
