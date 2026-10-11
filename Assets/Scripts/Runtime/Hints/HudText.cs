@@ -3,7 +3,7 @@ namespace Game.Hints
     /// <summary>The words shown on the HUD, kept out of the MonoBehaviour so tests can cover them.</summary>
     public static class HudText
     {
-        public const string ControlsSummary = "A / D move   Space jump   1 / 2 switch plushie   E hint   ? all controls";
+        public const string ControlsSummary = "A / D move   Space jump   R rabbit   B bear   E hint   ? all controls";
 
         public const string HelpTitle = "Controls";
 
@@ -11,7 +11,8 @@ namespace Game.Hints
             "Keyboard\n" +
             "  A / D or the arrow keys: move\n" +
             "  Space: jump\n" +
-            "  1 / 2: switch plushie\n" +
+            "  R: select the rabbit    B: select the bear\n" +
+            "  1 / 2: previous / next plushie\n" +
             "  E: hint (or click the Man in the Moon)\n" +
             "  ? or F1: show / hide this help\n" +
             "\n" +
