@@ -77,7 +77,9 @@ that pass all of them. Each merge to `main` publishes the builds as the rolling
 - **itch.io:** each merge to `main` also pushes the WebGL build to itch.io (channel `html5`) with
   [butler](https://itch.io/docs/butler/), once you set the `ITCH_TARGET` repository variable
   (`<itch user>/<game slug>`) and the `BUTLER_API_KEY` secret (itch.io > Settings > API keys).
-  Without them the job does nothing. In the itch.io page's settings, mark the upload as "played
+  Without them the job does nothing. Variable and secret changes only apply to runs that start
+  afterwards. To re-push the current `dev` WebGL build without rebuilding, run the
+  "Push dev WebGL build to itch.io" workflow (`gh workflow run itch.yml`). In the itch.io page's settings, mark the upload as "played
   in the browser". The WebGL build is gzip-compressed, so the host must send
   `Content-Encoding: gzip` for the `.gz` files; if itch.io doesn't, enable Unity's decompression
   fallback (Player Settings > Publishing Settings).
