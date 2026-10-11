@@ -84,6 +84,7 @@ namespace Game.Editor
             SetArray(rosterComponent, "m_Plushies", new Object[] { bear, rabbit });
 
             BuildHintOverlay(roomController);
+            BuildPlushieHud(rosterComponent);
             EnsureEventSystem();
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -101,7 +102,9 @@ namespace Game.Editor
                 go.AddComponent<AudioListener>();
             }
             cam.orthographic = true;
-            cam.orthographicSize = 6.3f;
+            cam.orthographicSize = 6.3f; // CameraFit widens this when the window is narrower than the room
+            if (cam.GetComponent<CameraFit>() == null)
+                cam.gameObject.AddComponent<CameraFit>();
             cam.transform.SetPositionAndRotation(new Vector3(0, 2.8f, -10), Quaternion.identity);
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.2f, 0.15f, 0.12f);
@@ -175,6 +178,29 @@ namespace Game.Editor
             var overlay = go.AddComponent<HintOverlay>();
             Set(overlay, "m_Room", room);
             SetStrings(overlay, "m_Hints", k_Hints);
+        }
+
+        static void BuildPlushieHud(PlushieRoster roster)
+        {
+            var existing = Object.FindAnyObjectByType<PlushieHud>();
+            if (existing != null)
+                Object.DestroyImmediate(existing.gameObject);
+
+            PanelSettings panelSettings = null;
+            foreach (var document in Object.FindObjectsByType<UIDocument>())
+            {
+                if (document.panelSettings != null)
+                {
+                    panelSettings = document.panelSettings;
+                    break;
+                }
+            }
+
+            var go = new GameObject("PlushieHud");
+            var uiDocument = go.AddComponent<UIDocument>();
+            uiDocument.panelSettings = panelSettings;
+            var hud = go.AddComponent<PlushieHud>();
+            Set(hud, "m_Roster", roster);
         }
 
         static void EnsureEventSystem()

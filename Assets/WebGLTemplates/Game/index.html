@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
+    <title>{{{ PRODUCT_NAME }}}</title>
+    <style>
+      /* The canvas fills the whole window (and so itch.io's fullscreen frame); the game adapts its
+         camera to the window shape (see CameraFit). The background matches the camera's. */
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #33261e; }
+      #unity-canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; background: #33261e; }
+      #overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                 gap: 14px; color: #f7e6c9; font: 20px/1.4 system-ui, sans-serif; pointer-events: none; }
+      #overlay.done { display: none; }
+      #bar { width: min(320px, 60vw); height: 10px; border-radius: 5px; background: #5a4538; overflow: hidden; }
+      #bar-fill { width: 0%; height: 100%; background: #f2b94b; }
+      #error { position: fixed; left: 50%; top: 10%; transform: translateX(-50%); max-width: 80vw; padding: 12px 16px;
+               background: #8c2b2b; color: #fff; font: 16px/1.4 system-ui, sans-serif; border-radius: 6px; display: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="overlay"><div>Loading {{{ PRODUCT_NAME }}}&hellip;</div><div id="bar"><div id="bar-fill"></div></div></div>
+    <div id="error"></div>
+    <script src="Build/{{{ LOADER_FILENAME }}}"></script>
+    <script>
+      var canvas = document.querySelector("#unity-canvas");
+      var fill = document.querySelector("#bar-fill");
+
+      function showError(message) {
+        // On the page, not alert(): a native dialog blocks the page and any browser automation.
+        var box = document.querySelector("#error");
+        box.textContent = String(message);
+        box.style.display = "block";
+        console.error(message);
+      }
+
+      createUnityInstance(canvas, {
+        arguments: [],
+#if PROGRESSIVE_ASSET_LOADING
+        primaryDataUrls: {{{ JSON.stringify(PRIMARY_DATA_FILES) }}},
+        secondaryDataUrls: {{{ JSON.stringify(SECONDARY_DATA_FILES) }}},
+#else
+        dataUrl: "Build/{{{ DATA_FILENAME }}}",
+#endif
+        frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_WASM
+        codeUrl: "Build/{{{ CODE_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+        symbolsUrl: "Build/{{{ SYMBOLS_FILENAME }}}",
+#endif
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      }, function (progress) {
+        fill.style.width = (100 * progress) + "%";
+      }).then(function () {
+        document.querySelector("#overlay").className = "done";
+        canvas.focus();
+      }).catch(showError);
+    </script>
+  </body>
+</html>
