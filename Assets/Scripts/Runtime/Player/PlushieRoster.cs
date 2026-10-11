@@ -20,6 +20,7 @@ namespace Game.Player
         InputAction m_Jump;
         InputAction m_Next;
         InputAction m_Previous;
+        InputAction[] m_Direct;
 
         /// <summary>Raised whenever the active plushie changes (including on start and room reset).</summary>
         public event Action ActiveChanged;
@@ -43,6 +44,12 @@ namespace Game.Player
             m_Jump = actions.FindAction("Player/Jump", true);
             m_Next = actions.FindAction("Player/Next", true);
             m_Previous = actions.FindAction("Player/Previous", true);
+            m_Direct = new InputAction[m_Plushies.Length];
+            for (var i = 0; i < m_Plushies.Length; i++)
+            {
+                var actionName = m_Plushies[i].SelectAction;
+                m_Direct[i] = string.IsNullOrEmpty(actionName) ? null : actions.FindAction(actionName, true);
+            }
             ApplyActive();
         }
 
@@ -55,6 +62,11 @@ namespace Game.Player
                 ApplyActive();
             else if (m_Previous.WasPressedThisFrame() && Selection.Previous())
                 ApplyActive();
+            for (var i = 0; i < m_Direct.Length; i++)
+            {
+                if (m_Direct[i] != null && m_Direct[i].WasPressedThisFrame() && Selection.Select(i))
+                    ApplyActive();
+            }
 
             var active = Active;
             active.MoveInput = Mathf.Clamp(m_Move.ReadValue<Vector2>().x, -1f, 1f);

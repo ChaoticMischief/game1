@@ -74,9 +74,9 @@ namespace Game.Editor
             kill.AddComponent<KillZone>();
 
             var bear = Plushie("Bear", room, sprite, new Vector2(-7.5f, 1), new Vector2(1.3f, 1.3f), new Color(0.55f, 0.35f, 0.2f),
-                mass: 5f, moveSpeed: 4f, jumpHeight: 1f);
+                mass: 5f, moveSpeed: 4f, jumpHeight: 1f, selectAction: "Player/SelectBear");
             var rabbit = Plushie("Rabbit", room, sprite, new Vector2(-9.3f, 1), new Vector2(0.7f, 1f), new Color(0.95f, 0.85f, 0.85f),
-                mass: 1f, moveSpeed: 5f, jumpHeight: 2.2f);
+                mass: 1f, moveSpeed: 5f, jumpHeight: 2.2f, selectAction: "Player/SelectRabbit");
 
             var roster = new GameObject("PlushieRoster");
             roster.transform.SetParent(room.transform);
@@ -126,7 +126,7 @@ namespace Game.Editor
         }
 
         static PlushieController Plushie(string name, GameObject parent, Sprite sprite, Vector2 position, Vector2 size, Color color,
-            float mass, float moveSpeed, float jumpHeight)
+            float mass, float moveSpeed, float jumpHeight, string selectAction)
         {
             var go = Block(name, parent, sprite, position, size, color, 10, true);
             var body = go.AddComponent<Rigidbody2D>();
@@ -152,6 +152,7 @@ namespace Game.Editor
             Set(controller, "m_MoveSpeed", moveSpeed);
             Set(controller, "m_JumpHeight", jumpHeight);
             Set(controller, "m_ActiveMarker", marker);
+            Set(controller, "m_SelectAction", selectAction);
             return controller;
         }
 

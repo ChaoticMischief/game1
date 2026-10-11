@@ -17,6 +17,7 @@ namespace Game.Player
         [SerializeField] float m_Acceleration = 30f;
         [SerializeField] float m_JumpHeight = 1f;
         [SerializeField] GameObject m_ActiveMarker;
+        [SerializeField] string m_SelectAction = "";
 
         Rigidbody2D m_Body;
         BoxCollider2D m_Collider;
@@ -25,6 +26,9 @@ namespace Game.Player
         bool m_JumpQueued;
 
         public string DisplayName => m_DisplayName;
+
+        /// <summary>Name of the input action (e.g. "Player/SelectBear") that makes this the active plushie; empty for none.</summary>
+        public string SelectAction => m_SelectAction;
 
         /// <summary>Horizontal input in [-1, 1], set by whoever controls this plushie.</summary>
         public float MoveInput { get; set; }

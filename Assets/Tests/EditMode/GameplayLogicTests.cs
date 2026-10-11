@@ -41,7 +41,7 @@ namespace Game.Tests
         [Test]
         public void HelpMentionsEveryControl()
         {
-            foreach (var word in new[] { "A / D", "Space", "1 / 2", "E:", "F1", "Gamepad" })
+            foreach (var word in new[] { "A / D", "Space", "R: select the rabbit", "B: select the bear", "1 / 2", "E:", "F1", "Gamepad" })
                 StringAssert.Contains(word, HudText.HelpBody);
         }
     }
