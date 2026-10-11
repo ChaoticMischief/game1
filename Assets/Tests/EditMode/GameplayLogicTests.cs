@@ -23,6 +23,28 @@ namespace Game.Tests
         }
     }
 
+    public class CameraFitTests
+    {
+        [Test]
+        public void WideWindowKeepsTheRoomHeight()
+        {
+            Assert.AreEqual(6.3f, CameraFit.OrthographicSize(11f, 6.3f, 16f / 9f), 1e-4f);
+        }
+
+        [Test]
+        public void NarrowWindowWidensTheViewToFitTheRoomWidth()
+        {
+            // 4:3 is 1.333 wide per unit of height, so 22 units wide needs a half-height of 11 / 1.333.
+            Assert.AreEqual(8.25f, CameraFit.OrthographicSize(11f, 6.3f, 4f / 3f), 1e-3f);
+        }
+
+        [Test]
+        public void ZeroAspectFallsBackToTheRoomHeight()
+        {
+            Assert.AreEqual(6.3f, CameraFit.OrthographicSize(11f, 6.3f, 0f));
+        }
+    }
+
     public class PlushieSelectionTests
     {
         [Test]

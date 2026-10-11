@@ -101,7 +101,9 @@ namespace Game.Editor
                 go.AddComponent<AudioListener>();
             }
             cam.orthographic = true;
-            cam.orthographicSize = 6.3f;
+            cam.orthographicSize = 6.3f; // CameraFit widens this when the window is narrower than the room
+            if (cam.GetComponent<CameraFit>() == null)
+                cam.gameObject.AddComponent<CameraFit>();
             cam.transform.SetPositionAndRotation(new Vector3(0, 2.8f, -10), Quaternion.identity);
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.2f, 0.15f, 0.12f);
