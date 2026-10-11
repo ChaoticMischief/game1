@@ -1,0 +1,43 @@
+# Pushes the WebGL build from the rolling "dev" release to itch.io, without rebuilding anything.
+# Run it from the Actions tab (or `gh workflow run itch.yml`) to re-test the itch.io page. The
+# normal publish on every merge to main is the publish-itch job in ci.yml.
+name: Push dev WebGL build to itch.io
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-itch
+  cancel-in-progress: false
+
+jobs:
+  push:
+    name: Push to itch.io
+    runs-on: ubuntu-latest
+    env:
+      ITCH_TARGET: ${{ vars.ITCH_TARGET }}
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Check itch.io is configured
+        run: |
+          if [ -z "$ITCH_TARGET" ] || [ -z "$BUTLER_API_KEY" ]; then
+            echo "::error title=itch.io not configured::Set the ITCH_TARGET variable and BUTLER_API_KEY secret."
+            exit 1
+          fi
+      - name: Download the dev release's WebGL build
+        run: |
+          gh release download dev --pattern 'game1-WebGL-*.zip' --dir dl
+          sha="$(gh release view dev --json targetCommitish --jq .targetCommitish)"
+          echo "BUILD_SHA=${sha::8}" >> "$GITHUB_ENV"
+          unzip -q dl/game1-WebGL-*.zip -d webgl
+      - name: Push to itch.io with butler
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler
+          chmod +x butler/butler
+          butler/butler push webgl "$ITCH_TARGET:html5" --userversion "$BUILD_SHA"
