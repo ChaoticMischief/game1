@@ -23,6 +23,29 @@ namespace Game.Tests
         }
     }
 
+    public class HudTextTests
+    {
+        [Test]
+        public void SelectedLineNamesThePlushie()
+        {
+            Assert.AreEqual("Currently selected plushie: Rabbit", HudText.SelectedLine("Rabbit"));
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        public void SelectedLineHandlesNoPlushie(string name)
+        {
+            Assert.AreEqual("Currently selected plushie: none", HudText.SelectedLine(name));
+        }
+
+        [Test]
+        public void HelpMentionsEveryControl()
+        {
+            foreach (var word in new[] { "A / D", "Space", "1 / 2", "E:", "F1", "Gamepad" })
+                StringAssert.Contains(word, HudText.HelpBody);
+        }
+    }
+
     public class CameraFitTests
     {
         [Test]

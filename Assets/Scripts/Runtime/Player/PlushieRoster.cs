@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Game.Room;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -19,12 +21,15 @@ namespace Game.Player
         InputAction m_Next;
         InputAction m_Previous;
 
-        public PlushieController Active => m_Plushies.Length == 0 ? null : m_Plushies[m_Selection.Index];
+        /// <summary>Raised whenever the active plushie changes (including on start and room reset).</summary>
+        public event Action ActiveChanged;
 
-        void Awake()
-        {
-            m_Selection = new PlushieSelection(m_Plushies.Length);
-        }
+        public IReadOnlyList<PlushieController> Plushies => m_Plushies;
+
+        public PlushieController Active => m_Plushies.Length == 0 ? null : m_Plushies[Selection.Index];
+
+        // Created on first use, since other components may ask for the active plushie in their own OnEnable.
+        PlushieSelection Selection => m_Selection ?? (m_Selection = new PlushieSelection(m_Plushies.Length));
 
         void OnEnable()
         {
@@ -46,9 +51,9 @@ namespace Game.Player
             if (m_Move == null || m_Plushies.Length == 0)
                 return;
 
-            if (m_Next.WasPressedThisFrame() && m_Selection.Next())
+            if (m_Next.WasPressedThisFrame() && Selection.Next())
                 ApplyActive();
-            else if (m_Previous.WasPressedThisFrame() && m_Selection.Previous())
+            else if (m_Previous.WasPressedThisFrame() && Selection.Previous())
                 ApplyActive();
 
             var active = Active;
@@ -59,7 +64,7 @@ namespace Game.Player
 
         public void ResetState()
         {
-            m_Selection.Reset();
+            Selection.Reset();
             ApplyActive();
         }
 
@@ -67,11 +72,12 @@ namespace Game.Player
         {
             for (var i = 0; i < m_Plushies.Length; i++)
             {
-                var isActive = i == m_Selection.Index;
+                var isActive = i == Selection.Index;
                 m_Plushies[i].SetActive(isActive);
                 if (!isActive)
                     m_Plushies[i].MoveInput = 0f;
             }
+            ActiveChanged?.Invoke();
         }
     }
 }

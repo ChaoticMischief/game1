@@ -84,6 +84,7 @@ namespace Game.Editor
             SetArray(rosterComponent, "m_Plushies", new Object[] { bear, rabbit });
 
             BuildHintOverlay(roomController);
+            BuildPlushieHud(rosterComponent);
             EnsureEventSystem();
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -177,6 +178,29 @@ namespace Game.Editor
             var overlay = go.AddComponent<HintOverlay>();
             Set(overlay, "m_Room", room);
             SetStrings(overlay, "m_Hints", k_Hints);
+        }
+
+        static void BuildPlushieHud(PlushieRoster roster)
+        {
+            var existing = Object.FindAnyObjectByType<PlushieHud>();
+            if (existing != null)
+                Object.DestroyImmediate(existing.gameObject);
+
+            PanelSettings panelSettings = null;
+            foreach (var document in Object.FindObjectsByType<UIDocument>())
+            {
+                if (document.panelSettings != null)
+                {
+                    panelSettings = document.panelSettings;
+                    break;
+                }
+            }
+
+            var go = new GameObject("PlushieHud");
+            var uiDocument = go.AddComponent<UIDocument>();
+            uiDocument.panelSettings = panelSettings;
+            var hud = go.AddComponent<PlushieHud>();
+            Set(hud, "m_Roster", roster);
         }
 
         static void EnsureEventSystem()
