@@ -74,6 +74,14 @@ that pass all of them. Each merge to `main` publishes the builds as the rolling
   Actions tab) and keeps one `upstream` issue listing newer Unity editor, package and analyzer
   versions. Dependabot covers GitHub Actions.
 
+- **itch.io:** each merge to `main` also pushes the WebGL build to itch.io (channel `html5`) with
+  [butler](https://itch.io/docs/butler/), once you set the `ITCH_TARGET` repository variable
+  (`<itch user>/<game slug>`) and the `BUTLER_API_KEY` secret (itch.io > Settings > API keys).
+  Without them the job does nothing. In the itch.io page's settings, mark the upload as "played
+  in the browser". The WebGL build is gzip-compressed, so the host must send
+  `Content-Encoding: gzip` for the `.gz` files; if itch.io doesn't, enable Unity's decompression
+  fallback (Player Settings > Publishing Settings).
+
 Unity is activated with a Personal license from the `UNITY_EMAIL` / `UNITY_PASSWORD` repository
 secrets. Pull requests from forks can't use secrets, so their Unity jobs are skipped.
 

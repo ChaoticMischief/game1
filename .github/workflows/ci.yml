@@ -236,3 +236,40 @@ jobs:
           gh release create dev dist/*.zip --prerelease --target "$GITHUB_SHA" \
             --title "Dev build (main @ ${short})" \
             --notes "Automatic build of main at ${GITHUB_SHA}. Replaced on every merge; not a stable release. Game content is not licensed for redistribution (see CONTENT-LICENSE.md)."
+
+  publish-itch:
+    name: Publish WebGL to itch.io
+    needs: [unity-tests, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publish-itch
+      cancel-in-progress: false
+    env:
+      # Set the ITCH_TARGET repository variable to "<itch user>/<game slug>" and the
+      # BUTLER_API_KEY repository secret to an itch.io API key (itch.io > Settings > API keys).
+      # Without both, this job does nothing.
+      ITCH_TARGET: ${{ vars.ITCH_TARGET }}
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+    steps:
+      - name: Check itch.io is configured
+        id: config
+        run: |
+          if [ -z "$ITCH_TARGET" ] || [ -z "$BUTLER_API_KEY" ]; then
+            echo "::notice title=itch.io not configured::Set the ITCH_TARGET variable and BUTLER_API_KEY secret to publish."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.config.outputs.enabled == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: game1-WebGL
+          path: webgl
+      - name: Push to itch.io with butler
+        if: steps.config.outputs.enabled == 'true'
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler
+          chmod +x butler/butler
+          butler/butler push webgl "$ITCH_TARGET:html5" --userversion "${GITHUB_SHA::8}"
