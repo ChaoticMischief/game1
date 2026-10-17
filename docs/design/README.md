@@ -12,7 +12,9 @@ Suggested files as the design grows:
 | `mechanics/<name>.md` | One file per mechanic or system: rules, tuning values, edge cases |
 | `levels/<name>.md` | Level or area layouts, goals, pacing |
 | `narrative.md` | Setting, characters, story beats |
-| `art-direction.md`, `audio-direction.md` | Style references and constraints |
+| [`art-direction.md`](art-direction.md) | Art style, cast, per-mode looks, greybox replacement (Sarah is the art director) |
+| [`art-spec.md`](art-spec.md) | Technical art spec: sizes, formats, naming, folders, WebGL limits, PR checklist |
+| `audio-direction.md` | Audio style references and constraints |
 | `backlog.md` | Ideas not yet scheduled (scheduled work is in GitHub Issues) |
 
 Link issues to the design section they implement, and update the design doc in the same PR when

@@ -25,7 +25,8 @@ are welcome, within the limits below.
 
 [`AGENTS.md`](AGENTS.md) describes the project's conventions in detail (it's written for AI
 agents but applies to everyone): engine choices, code layout, testing, and the tools in `tools/`.
-Setting up a Mac is one script: `tools/bootstrap-macos.sh`.
+Setting up a Mac is one script: `tools/bootstrap-macos.sh`; setting up a Windows PC for art is
+`tools/bootstrap-windows.ps1`. Art contributions follow [`docs/design/art-spec.md`](docs/design/art-spec.md).
 
 ## Reporting problems
 

@@ -23,6 +23,40 @@ this project from the dev repo's mirror, and installs the matching Unity editor.
 end it lists the steps that need a person: license, sign-ins, and choosing Rider as
 Unity's script editor.
 
+## Setting up a machine (Windows, for artists)
+
+This sets up a Windows 10/11 PC for making art, from a blank machine: Git (with Git LFS and Git
+Credential Manager), GitHub Desktop, GitHub CLI, Unity Hub and the matching Unity editor with
+WebGL support, Krita, and PureRef when winget has it. It also clones the game and sets this
+clone's git config. It does not install code tools (Rider, .NET SDK, gitleaks, Claude Code) and
+does not touch the private dev-history repo. `winget` (App Installer) is built into current
+Windows 10/11; if the script says it is missing, update "App Installer" in the Microsoft Store.
+
+Open **PowerShell** (Start menu > PowerShell) and download the script to a temporary folder:
+
+```powershell
+$dir = Join-Path $env:TEMP 'game1-setup'
+New-Item -ItemType Directory -Force $dir | Out-Null
+Invoke-WebRequest https://raw.githubusercontent.com/ChaoticMischief/game1/main/tools/bootstrap-windows.ps1 -OutFile "$dir\bootstrap-windows.ps1"
+notepad "$dir\bootstrap-windows.ps1"   # read it before you run it
+```
+
+Then run it with your GitHub username (add `-DryRun` first to see what it would do):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "$dir\bootstrap-windows.ps1" -GitHubUser <your-github-name>
+```
+
+Options: `-RepoUrl`, `-TargetDir` (default `%USERPROFILE%\dev\game1`), `-GitName`, `-GitEmail`,
+`-SkipUnity`, `-SkipKrita`, `-SkipPureRef`, `-SkipGitHubCli`. It is safe to re-run: anything
+already installed is left alone, and an existing clone is only fast-forwarded. It never asks for
+a password or token; git opens a browser window to sign in to GitHub the first time it needs to.
+At the end it lists what is left for a person: the Unity sign-in and license, the GitHub
+sign-in, and adding the project to Unity Hub. Artists then read
+[`docs/design/art-direction.md`](docs/design/art-direction.md) and
+[`docs/design/art-spec.md`](docs/design/art-spec.md). The script has been checked for syntax, but
+not run on a real Windows machine yet; report problems as issues.
+
 `.githooks/` holds the Git LFS hooks (because `core.hooksPath` bypasses the ones
 `git lfs install` would create) plus `post-commit`, which records each commit in
 the private dev-history repo whose location (and clone URL) is set in

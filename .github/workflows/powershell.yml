@@ -1,0 +1,50 @@
+# Parse and lint the PowerShell bootstrap script on a Windows runner, with both Windows
+# PowerShell 5.1 and PowerShell 7 (the two versions the script supports). It cannot run the
+# installs for real; see tools/bootstrap-windows.ps1.
+name: PowerShell
+
+on:
+  pull_request:
+    paths:
+      - "tools/**.ps1"
+      - ".github/workflows/powershell.yml"
+  push:
+    branches: [main]
+    paths:
+      - "tools/**.ps1"
+      - ".github/workflows/powershell.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: PowerShell lint
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Parse (Windows PowerShell 5.1)
+        shell: powershell
+        run: |
+          $failed = $false
+          foreach ($f in Get-ChildItem tools -Filter *.ps1 -Recurse) {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$errors) | Out-Null
+            foreach ($e in $errors) { Write-Host "$($f.Name):$($e.Extent.StartLineNumber): $($e.Message)"; $failed = $true }
+          }
+          if ($failed) { exit 1 }
+      - name: Parse and analyze (PowerShell 7)
+        shell: pwsh
+        run: |
+          $failed = $false
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          foreach ($f in Get-ChildItem tools -Filter *.ps1 -Recurse) {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$errors) | Out-Null
+            foreach ($e in $errors) { Write-Host "$($f.Name):$($e.Extent.StartLineNumber): $($e.Message)"; $failed = $true }
+            $findings = Invoke-ScriptAnalyzer -Path $f.FullName -Severity Error, Warning -ExcludeRule PSAvoidUsingWriteHost, PSUseShouldProcessForStateChangingFunctions
+            $findings | Format-Table -AutoSize | Out-String | Write-Host
+            if ($findings) { $failed = $true }
+          }
+          if ($failed) { exit 1 }
