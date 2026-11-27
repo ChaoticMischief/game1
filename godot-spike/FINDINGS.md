@@ -15,6 +15,8 @@ Godot 4's C# can't export to the web, and the game ships on the web.
 | Tests | 337 lines (EditMode + PlayMode) | 198 lines, 19 tests, about 9 s headless |
 | Web download (gzip) | **17.6 MB** | **10.2 MB** (12.1 MB with Sentry) |
 | Web load on localhost (to first frame) | about 0.6 s cold, 0.3 s warm, then the "Made with Unity" splash | about 0.55 s cold, 0.3 s warm |
+| Runtime, bedroom in Chrome (60 Hz) | steady 60 fps; about 2 ms main-thread work per frame; dropped frames at 20x CPU slowdown | steady 60 fps; about 1 ms per frame; no dropped frames even at 20x |
+| Memory after load (JS heap + wasm memory) | 27 MB + 144 MB = **171 MB** | 8.5 MB + 38 MB = **47 MB** |
 | Web export, local (M-series Mac) | not measured (editor was closed; CI job below) | **1.2 to 1.4 s** |
 | Web export on GitHub Actions | about 21 min (GameCI, needs a license) | **56 s for the whole job**, of which export 3 s |
 | Engine download / license | Hub + editor (GBs), Unity account, license activation in CI | 170 MB app, no account, MIT |
@@ -22,9 +24,9 @@ Godot 4's C# can't export to the web, and the game ships on the web.
 | Agent tooling | MCP for Unity, `unity.sh`, C# LSP | Headless CLI for everything; community MCP servers only |
 | Sarah's bone-animated characters | PSD Importer + 2D Animation (first-party) | **No first-party equivalent. This is the open risk.** |
 
-**Verdict:** on code size, build speed, web size, CI cost and agent friendliness, Godot is as
-good or better. It fit the whole core loop in about a third of the code, and it builds for the
-web in about a second. The one thing that could block a switch is Sarah's art pipeline: painted
+**Verdict:** on code size, build speed, web size, runtime cost, memory, CI cost and agent
+friendliness, Godot is as good or better. It fit the whole core loop in about a third of the
+code, and it builds for the web in about a second. The one thing that could block a switch is Sarah's art pipeline: painted
 characters animated with bones. Unity has a first-party path for that and Godot doesn't (see
 "Art pipeline"). Before deciding, spend a day with Sarah rigging one plushie in Godot. If that
 goes well, switching now is cheap: this port took one session.
@@ -97,6 +99,60 @@ needs no cross-origin-isolation headers on itch.io).
   of the engine in CI.
 - The Unity build shows the "Made with Unity" splash after loading. Unity 6 Personal can turn it
   off, so that isn't a Godot advantage, just a setting to check.
+
+## Runtime performance in the browser
+
+Both web builds were run in Chrome 158 (headless, but drawing on the real GPU through ANGLE
+Metal) on an Apple M4 Max at 60 Hz in a 1280x720 window, from the same local server. The Unity
+build is the `dev` release `39f50f09`. Each configuration ran 3 times, and the tables show the
+median. A run: load the page, wait 6 s (past Unity's splash), measure 8 s idle with the bear
+selected, then 3 s holding D. Screenshots confirmed the bear walked to the door in both builds,
+so the simulated input reached both engines. "Slowdown" is Chrome DevTools' CPU throttling, which
+stands in for a modest machine: 4x is roughly a mid-range laptop, 10x to 20x a cheap Chromebook
+or an old phone.
+
+**Frame rate.** Both held a steady 60 fps (16.7 ms frames, p99 16.8 ms) idle and walking, at 1x,
+4x and 10x. At **20x**, Unity dropped frames in all 3 runs. Frames over 20 ms while walking were
+1, 4 and 70 of about 180, and the worst run averaged 28.6 ms (about 35 fps), with an idle hitch up
+to 33 ms. Godot dropped none.
+
+**Main-thread work per frame** (CDP `TaskDuration` ÷ frames, in thread time):
+
+| Slowdown | Unity idle | Unity walking | Godot idle | Godot walking |
+|---|---|---|---|---|
+| 1x | 2.1 ms | 1.8 ms | 1.0 ms | 1.0 ms |
+| 10x | 4.3 ms | 5.3 ms | 1.8 ms | 2.1 ms |
+| 20x | 5.9 ms | 7.9 ms | 4.2 ms | 4.5 ms |
+
+Compare the engines within a row, not one row with another. Chrome throttles by pausing the
+thread, so thread time doesn't grow 20x, and the 4x row (omitted) came out lower than 1x for both
+engines. Within each row, Godot does about half of Unity's work per frame. Both are far under the
+16.7 ms budget for this greybox room. Real art, more rooms and Unity's 2D animation will change
+this, so treat it as engine overhead, not a game budget.
+
+**Memory** after load, after a forced garbage collection, identical across all runs:
+
+| | JS heap | WebAssembly memory | Total |
+|---|---|---|---|
+| Unity | 27.1 MB | 144 MB | **171 MB** |
+| Godot | 8.5 MB | 38 MB | **47 MB** |
+
+"WebAssembly memory" is the size of the engine's linear memory, which is what the page actually
+reserves. Unity's includes its configured initial heap, so some of it is headroom, but the browser
+commits it either way. On low-memory phones and Chromebooks, 47 MB against 171 MB matters more
+than the frame times.
+
+**Load time under slowdown** (to the engine's "ready", excluding Unity's splash): about the same
+for both, roughly 0.35 / 1.2 / 3.1 / 6.3 s for Unity and 0.4 / 1.3 / 3.3 / 6.9 s for Godot at
+1x / 4x / 10x / 20x. That's wasm compilation and startup. Download time comes on top (see the
+sizes above), and there Godot's smaller download wins on any real connection.
+
+Not measured: GPU time (both draw a few dozen quads), Safari and Firefox, real phones, and
+desktop builds.
+
+Reproduce: `tools/web-serve.py <build dir> <port>` for each build (8401 Unity, 8402 Godot),
+start Chrome with `--headless=new --remote-debugging-port=9334 --use-angle=metal
+--enable-precise-memory-info`, then `python3 tools/web-perf.py 9334 3`.
 
 ## Headless export in GitHub Actions
 

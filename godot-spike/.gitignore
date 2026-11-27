@@ -4,3 +4,4 @@
 /build/
 /reports/
 *.tmp
+/tools/shot-*.png
