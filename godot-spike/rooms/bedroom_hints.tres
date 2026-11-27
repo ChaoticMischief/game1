@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="HintSet" format=3]
+
+[ext_resource type="Script" path="res://scripts/hints/hint_set.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+tiers = Array[String](["The door won't open by itself. Something heavy might help.", "The bear is heavy enough to hold the plate down. The rabbit jumps higher than the bear.", "Park the bear on the plate, switch to the rabbit, hop over the bear, go through the door and jump up to the lever on the shelf. Then the bear can follow."])

@@ -1,0 +1,86 @@
+# Engine-evaluation spike (godot-spike/FINDINGS.md): tests and exports the Godot port of the
+# bedroom for the web, headless, with no license activation. Throwaway: delete this file with
+# godot-spike/ if the project stays on Unity.
+name: Godot spike
+
+on:
+  pull_request:
+    paths:
+      - "godot-spike/**"
+      - ".github/workflows/godot-spike.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godot-spike-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+  GODOT_BIN: ${{ github.workspace }}/.godot-bin/godot
+
+jobs:
+  web:
+    name: Godot tests + web export
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: godot-spike
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache Godot and its web export templates
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            .godot-bin
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-web
+
+      - name: Download Godot (official GitHub release, SHA-512 checked)
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GODOT_VERSION}-stable"
+          mkdir -p dl .godot-bin
+          gh release download "$tag" -R godotengine/godot -D dl \
+            -p "Godot_v${tag}_linux.x86_64.zip" -p "Godot_v${tag}_export_templates.tpz" -p SHA512-SUMS.txt
+          (cd dl && grep -E "Godot_v${tag}_(linux.x86_64.zip|export_templates.tpz)$" SHA512-SUMS.txt | sha512sum -c)
+          unzip -q "dl/Godot_v${tag}_linux.x86_64.zip" -d dl
+          mv "dl/Godot_v${tag}_linux.x86_64" "$GODOT_BIN"
+          templates="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$templates"
+          unzip -q -j "dl/Godot_v${tag}_export_templates.tpz" 'templates/web_nothreads_release.zip' 'templates/version.txt' -d "$templates"
+          rm -rf dl
+
+      - name: Import the project
+        run: |
+          start=$(date +%s)
+          "$GODOT_BIN" --headless --path . --import
+          echo "::notice title=Import time::$(( $(date +%s) - start ))s"
+
+      - name: Run tests (gdUnit4)
+        run: |
+          tools/fetch-addons.sh
+          "$GODOT_BIN" --headless --path . --import
+          addons/gdUnit4/runtest.sh --headless --ignoreHeadlessMode -a res://test
+
+      - name: Export for the web
+        run: |
+          mkdir -p build/web
+          start=$(date +%s)
+          "$GODOT_BIN" --headless --path . --export-release "Web" build/web/index.html
+          echo "::notice title=Web export time::$(( $(date +%s) - start ))s"
+          du -b build/web/* | sort -n
+          echo "gzip transfer: $(cat build/web/index.{wasm,js,pck} | gzip -9 | wc -c) bytes (wasm+js+pck)"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: godot-spike-web
+          path: godot-spike/build/web
+          retention-days: 7

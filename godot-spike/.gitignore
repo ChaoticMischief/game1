@@ -1,0 +1,7 @@
+.godot/
+/addons/gdUnit4/
+/addons/sentry/
+/build/
+/reports/
+*.tmp
+/tools/shot-*.png
