@@ -1,0 +1,374 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/room/greybox_rect.gd" id="greybox"]
+
+[ext_resource type="Script" path="res://scripts/room/room_controller.gd" id="room"]
+
+[ext_resource type="Script" path="res://scripts/room/pressure_plate.gd" id="plate"]
+
+[ext_resource type="Script" path="res://scripts/room/door.gd" id="door"]
+
+[ext_resource type="Script" path="res://scripts/room/exit_zone.gd" id="exit"]
+
+[ext_resource type="Script" path="res://scripts/room/kill_zone.gd" id="kill"]
+
+[ext_resource type="Script" path="res://scripts/player/plushie.gd" id="plushie"]
+
+[ext_resource type="Script" path="res://scripts/player/plushie_roster.gd" id="roster"]
+
+[ext_resource type="Script" path="res://scripts/hints/hud.gd" id="hud"]
+
+[ext_resource type="Resource" path="res://rooms/bedroom_hints.tres" id="hints"]
+
+[ext_resource type="Script" path="res://scripts/diagnostics/build_info_overlay.gd" id="buildinfo"]
+
+[sub_resource type="RectangleShape2D" id="shape_0"]
+size = Vector2(1408, 64)
+
+[sub_resource type="RectangleShape2D" id="shape_1"]
+size = Vector2(64, 768)
+
+[sub_resource type="RectangleShape2D" id="shape_2"]
+size = Vector2(64, 768)
+
+[sub_resource type="RectangleShape2D" id="shape_3"]
+size = Vector2(192, 9.6)
+
+[sub_resource type="RectangleShape2D" id="shape_4"]
+size = Vector2(115.2, 19.2)
+
+[sub_resource type="RectangleShape2D" id="shape_5"]
+size = Vector2(44.8, 19.2)
+
+[sub_resource type="RectangleShape2D" id="shape_6"]
+size = Vector2(38.4, 256)
+
+[sub_resource type="RectangleShape2D" id="shape_7"]
+size = Vector2(115.2, 192)
+
+[sub_resource type="RectangleShape2D" id="shape_8"]
+size = Vector2(1920, 128)
+
+[sub_resource type="RectangleShape2D" id="shape_9"]
+size = Vector2(83.2, 83.2)
+
+[sub_resource type="RectangleShape2D" id="shape_10"]
+size = Vector2(44.8, 64)
+
+[node name="Main" type="Node2D"]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -179.2)
+
+[node name="Bedroom" type="Node2D" parent="."]
+script = ExtResource("room")
+
+[node name="Backdrop" type="Node2D" parent="Bedroom"]
+position = Vector2(0, -192)
+z_index = -10
+script = ExtResource("greybox")
+size = Vector2(1408, 768)
+color = Color(0.97, 0.88, 0.74, 1)
+
+[node name="Floor" type="StaticBody2D" parent="Bedroom"]
+position = Vector2(0, 32)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/Floor"]
+shape = SubResource("shape_0")
+
+[node name="Rect" type="Node2D" parent="Bedroom/Floor"]
+script = ExtResource("greybox")
+size = Vector2(1408, 64)
+color = Color(0.55, 0.38, 0.25, 1)
+
+[node name="WallLeft" type="StaticBody2D" parent="Bedroom"]
+position = Vector2(-704, -192)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/WallLeft"]
+shape = SubResource("shape_1")
+
+[node name="Rect" type="Node2D" parent="Bedroom/WallLeft"]
+script = ExtResource("greybox")
+size = Vector2(64, 768)
+color = Color(0.8, 0.65, 0.5, 1)
+
+[node name="WallRight" type="StaticBody2D" parent="Bedroom"]
+position = Vector2(704, -192)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/WallRight"]
+shape = SubResource("shape_2")
+
+[node name="Rect" type="Node2D" parent="Bedroom/WallRight"]
+script = ExtResource("greybox")
+size = Vector2(64, 768)
+color = Color(0.8, 0.65, 0.5, 1)
+
+[node name="Shelf" type="StaticBody2D" parent="Bedroom"]
+position = Vector2(384, -97.6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/Shelf"]
+shape = SubResource("shape_3")
+
+[node name="Rect" type="Node2D" parent="Bedroom/Shelf"]
+script = ExtResource("greybox")
+size = Vector2(192, 9.6)
+color = Color(0.6, 0.42, 0.28, 1)
+
+[node name="PressurePlate" type="Area2D" parent="Bedroom"]
+position = Vector2(-192, -9.6)
+z_index = 1
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("plate")
+required_mass = 3.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/PressurePlate"]
+shape = SubResource("shape_4")
+
+[node name="Rect" type="Node2D" parent="Bedroom/PressurePlate"]
+script = ExtResource("greybox")
+size = Vector2(115.2, 19.2)
+color = Color(1, 1, 1, 1)
+
+[node name="Lever" type="Area2D" parent="Bedroom"]
+position = Vector2(384, -112)
+z_index = 1
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("plate")
+required_mass = 0.5
+latches = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/Lever"]
+shape = SubResource("shape_5")
+
+[node name="Rect" type="Node2D" parent="Bedroom/Lever"]
+script = ExtResource("greybox")
+size = Vector2(44.8, 19.2)
+color = Color(1, 1, 1, 1)
+
+[node name="Door" type="StaticBody2D" parent="Bedroom" node_paths=PackedStringArray("plates")]
+position = Vector2(128, -128)
+z_index = 2
+script = ExtResource("door")
+plates = [NodePath("../PressurePlate"), NodePath("../Lever")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/Door"]
+shape = SubResource("shape_6")
+
+[node name="Rect" type="Node2D" parent="Bedroom/Door"]
+script = ExtResource("greybox")
+size = Vector2(38.4, 256)
+color = Color(0.45, 0.3, 0.2, 1)
+
+[node name="Exit" type="Area2D" parent="Bedroom" node_paths=PackedStringArray("room")]
+position = Vector2(576, -96)
+z_index = -1
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("exit")
+room = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/Exit"]
+shape = SubResource("shape_7")
+
+[node name="Rect" type="Node2D" parent="Bedroom/Exit"]
+script = ExtResource("greybox")
+size = Vector2(115.2, 192)
+color = Color(0.5, 0.85, 0.5, 0.45)
+
+[node name="KillZone" type="Area2D" parent="Bedroom" node_paths=PackedStringArray("room")]
+position = Vector2(0, 512)
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("kill")
+room = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/KillZone"]
+shape = SubResource("shape_8")
+
+[node name="Bear" type="CharacterBody2D" parent="Bedroom"]
+position = Vector2(-480, -64)
+z_index = 10
+script = ExtResource("plushie")
+collision_layer = 2
+collision_mask = 3
+display_name = "Bear"
+mass = 5
+move_speed = 256
+jump_height = 64
+select_action = &"select_bear"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/Bear"]
+shape = SubResource("shape_9")
+
+[node name="Rect" type="Node2D" parent="Bedroom/Bear"]
+script = ExtResource("greybox")
+size = Vector2(83.2, 83.2)
+color = Color(0.55, 0.35, 0.2, 1)
+
+[node name="ActiveMarker" type="Polygon2D" parent="Bedroom/Bear"]
+visible = false
+position = Vector2(0, -63.6)
+color = Color(1, 0.9, 0.2, 1)
+polygon = PackedVector2Array(0, -11, 11, 0, 0, 11, -11, 0)
+
+[node name="NameLabel" type="Label" parent="Bedroom/Bear"]
+offset_top = -99.2
+offset_bottom = -99.2
+grow_horizontal = 2
+grow_vertical = 0
+theme_type_variation = &"NameLabel"
+horizontal_alignment = 1
+
+[node name="Rabbit" type="CharacterBody2D" parent="Bedroom"]
+position = Vector2(-595.2, -64)
+z_index = 10
+script = ExtResource("plushie")
+collision_layer = 2
+collision_mask = 3
+display_name = "Rabbit"
+mass = 1
+move_speed = 320
+jump_height = 140.8
+select_action = &"select_rabbit"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bedroom/Rabbit"]
+shape = SubResource("shape_10")
+
+[node name="Rect" type="Node2D" parent="Bedroom/Rabbit"]
+script = ExtResource("greybox")
+size = Vector2(44.8, 64)
+color = Color(0.95, 0.85, 0.85, 1)
+
+[node name="ActiveMarker" type="Polygon2D" parent="Bedroom/Rabbit"]
+visible = false
+position = Vector2(0, -54)
+color = Color(1, 0.9, 0.2, 1)
+polygon = PackedVector2Array(0, -11, 11, 0, 0, 11, -11, 0)
+
+[node name="NameLabel" type="Label" parent="Bedroom/Rabbit"]
+offset_top = -89.6
+offset_bottom = -89.6
+grow_horizontal = 2
+grow_vertical = 0
+theme_type_variation = &"NameLabel"
+horizontal_alignment = 1
+
+[node name="PlushieRoster" type="Node" parent="Bedroom" node_paths=PackedStringArray("plushies")]
+script = ExtResource("roster")
+plushies = [NodePath("../Bear"), NodePath("../Rabbit")]
+
+[node name="HUD" type="CanvasLayer" parent="." node_paths=PackedStringArray("room", "roster")]
+script = ExtResource("hud")
+room = NodePath("../Bedroom")
+roster = NodePath("../Bedroom/PlushieRoster")
+hints = ExtResource("hints")
+
+[node name="Root" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HintButton" type="Button" parent="HUD/Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -136.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 136.0
+grow_horizontal = 0
+theme_type_variation = &"MoonButton"
+text = "Man in
+the Moon
+(hint)"
+
+[node name="HintText" type="Label" parent="HUD/Root"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -376.0
+offset_top = 150.0
+offset_right = -16.0
+grow_horizontal = 0
+theme_type_variation = &"HintLabel"
+autowrap_mode = 3
+
+[node name="RoomComplete" type="Label" parent="HUD/Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+theme_type_variation = &"HintLabel"
+theme_override_font_sizes/font_size = 28
+text = "Room complete! The plushies escaped."
+
+[node name="Status" type="Label" parent="HUD/Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_type_variation = &"StatusBar"
+horizontal_alignment = 1
+
+[node name="BuildInfo" type="Label" parent="HUD/Root"]
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = -60.0
+offset_bottom = -44.0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 11
+script = ExtResource("buildinfo")
+
+[node name="HelpCenter" type="CenterContainer" parent="HUD/Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Help" type="PanelContainer" parent="HUD/Root/HelpCenter"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HelpPanel"
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Root/HelpCenter/Help"]
+layout_mode = 2
+
+[node name="HelpTitle" type="Label" parent="HUD/Root/HelpCenter/Help/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.73, 0.29, 1)
+theme_override_font_sizes/font_size = 26
+
+[node name="HelpBody" type="Label" parent="HUD/Root/HelpCenter/Help/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
